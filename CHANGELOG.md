@@ -1,4 +1,4 @@
-# Changelog for `haskell-project`
+# Changelog for `project-PF`
 
 All notable changes to this project will be documented in this file.
 
