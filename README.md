@@ -1,1 +1,1 @@
-# project-PF
+# haskell-project

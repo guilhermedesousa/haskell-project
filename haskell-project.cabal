@@ -19,12 +19,7 @@ executable haskell-project
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:
-      base >=4.7 && <5
-    , linear
-    , project-PF
-    , sdl2
-    , sdl2-image
+  build-depends:       base >= 4.7 && < 5
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities
