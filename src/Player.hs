@@ -1,4 +1,4 @@
 module Player where
 
-data Player = Branco | Preto
+data Player = A | B
     deriving (Eq, Show)

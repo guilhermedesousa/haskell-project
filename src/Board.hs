@@ -35,50 +35,52 @@ createEmptyRow = [Nothing, Nothing, Nothing,
 
 createInitialBoard :: Board
 createInitialBoard = [
-    createThirdRow Branco,
-    createSecondRow Branco,
-    createFirstRow Branco,
+    createThirdRow A,
+    createSecondRow A,
+    createFirstRow A,
     createEmptyRow,
     createEmptyRow,
     createEmptyRow,
-    createFirstRow Preto,
-    createSecondRow Preto,
-    createThirdRow Preto]
+    createFirstRow B,
+    createSecondRow B,
+    createThirdRow B]
 
-greenColor, yellowColor, resetColor :: String
-greenColor = "\x1b[92m"  -- Verde
+greenColor, yellowColor, blueColor, whiteColor, resetColor :: String
+greenColor  = "\x1b[92m" -- Verde
 yellowColor = "\x1b[33m" -- Amarelo
-resetColor = "\x1b[0m"   -- Reseta para cor padrão
+blueColor   = "\x1b[34m" -- Azul
+whiteColor  = "\x1b[37m" -- Branco
+resetColor  = "\x1b[0m"  -- Reseta para cor padrão
 
 printPiece :: Piece -> String
 printPiece (Piece pieceType player) = case player of
-    Branco -> case pieceType of
-        Peao          -> yellowColor ++ "PB" ++ resetColor
-        Lanca         -> yellowColor ++ "LB" ++ resetColor
-        Cavalo        -> yellowColor ++ "CB" ++ resetColor
-        General_Prata -> yellowColor ++ "SB" ++ resetColor
-        General_Ouro  -> yellowColor ++ "GB" ++ resetColor
-        Bispo         -> yellowColor ++ "BB" ++ resetColor
-        Torre         -> yellowColor ++ "TB" ++ resetColor
-        Rei           -> yellowColor ++ "RB" ++ resetColor
-    Preto -> case pieceType of
-        Peao          -> greenColor ++ "PP" ++ resetColor
-        Lanca         -> greenColor ++ "LP" ++ resetColor
-        Cavalo        -> greenColor ++ "CP" ++ resetColor
-        General_Prata -> greenColor ++ "SP" ++ resetColor
-        General_Ouro  -> greenColor ++ "GP" ++ resetColor
-        Bispo         -> greenColor ++ "BP" ++ resetColor
-        Torre         -> greenColor ++ "TP" ++ resetColor
-        Rei           -> greenColor ++ "RP" ++ resetColor
+    A -> case pieceType of
+        Peao          -> yellowColor ++ "P" ++ resetColor
+        Lanca         -> yellowColor ++ "L" ++ resetColor
+        Cavalo        -> yellowColor ++ "C" ++ resetColor
+        General_Prata -> yellowColor ++ "S" ++ resetColor
+        General_Ouro  -> yellowColor ++ "G" ++ resetColor
+        Bispo         -> yellowColor ++ "B" ++ resetColor
+        Torre         -> yellowColor ++ "T" ++ resetColor
+        Rei           -> yellowColor ++ "R" ++ resetColor
+    B -> case pieceType of
+        Peao          -> blueColor ++ "P" ++ resetColor
+        Lanca         -> blueColor ++ "L" ++ resetColor
+        Cavalo        -> blueColor ++ "C" ++ resetColor
+        General_Prata -> blueColor ++ "S" ++ resetColor
+        General_Ouro  -> blueColor ++ "G" ++ resetColor
+        Bispo         -> blueColor ++ "B" ++ resetColor
+        Torre         -> blueColor ++ "T" ++ resetColor
+        Rei           -> blueColor ++ "R" ++ resetColor
 
 printCell :: Cell -> String
-printCell Nothing      = "    "
+printCell Nothing      = "   "
 printCell (Just piece) = " " ++ printPiece piece ++ " "
 
 printBoard :: Board -> IO ()
 printBoard board = do
-    putStrLn " a  | b  | c  | d  | e  | f  | g  | h  | i  "
-    putStrLn "--------------------------------------------"
+    putStrLn " a | b | c | d | e | f | g | h | i "
+    putStrLn "-----------------------------------"
     putStrLn (unlines (zipWith showRow board [1..9]))
     where
         showRow row n = intercalate "|" (map printCell row) ++ "| " ++ show n
