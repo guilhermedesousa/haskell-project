@@ -45,26 +45,31 @@ createInitialBoard = [
     createSecondRow Preto,
     createThirdRow Preto]
 
+greenColor, yellowColor, resetColor :: String
+greenColor = "\x1b[92m"  -- Verde
+yellowColor = "\x1b[33m" -- Amarelo
+resetColor = "\x1b[0m"   -- Reseta para cor padrão
+
 printPiece :: Piece -> String
-printPiece (Piece pieceType player) = case (player) of
-    Branco -> case (pieceType) of
-        Peao          -> "PB"
-        Lanca         -> "LB"
-        Cavalo        -> "CB"
-        General_Prata -> "SB" -- S = Silver
-        General_Ouro  -> "GB" -- G = Gold
-        Bispo         -> "BB"
-        Torre         -> "TB"
-        Rei           -> "RB"
-    Preto -> case (pieceType) of
-        Peao          -> "PP"
-        Lanca         -> "LP"
-        Cavalo        -> "CP"
-        General_Prata -> "SP" -- S = Silver
-        General_Ouro  -> "GP" -- G = Gold
-        Bispo         -> "BP"
-        Torre         -> "TP"
-        Rei           -> "RP"
+printPiece (Piece pieceType player) = case player of
+    Branco -> case pieceType of
+        Peao          -> yellowColor ++ "PB" ++ resetColor
+        Lanca         -> yellowColor ++ "LB" ++ resetColor
+        Cavalo        -> yellowColor ++ "CB" ++ resetColor
+        General_Prata -> yellowColor ++ "SB" ++ resetColor
+        General_Ouro  -> yellowColor ++ "GB" ++ resetColor
+        Bispo         -> yellowColor ++ "BB" ++ resetColor
+        Torre         -> yellowColor ++ "TB" ++ resetColor
+        Rei           -> yellowColor ++ "RB" ++ resetColor
+    Preto -> case pieceType of
+        Peao          -> greenColor ++ "PP" ++ resetColor
+        Lanca         -> greenColor ++ "LP" ++ resetColor
+        Cavalo        -> greenColor ++ "CP" ++ resetColor
+        General_Prata -> greenColor ++ "SP" ++ resetColor
+        General_Ouro  -> greenColor ++ "GP" ++ resetColor
+        Bispo         -> greenColor ++ "BP" ++ resetColor
+        Torre         -> greenColor ++ "TP" ++ resetColor
+        Rei           -> greenColor ++ "RP" ++ resetColor
 
 printCell :: Cell -> String
 printCell Nothing      = "    "
