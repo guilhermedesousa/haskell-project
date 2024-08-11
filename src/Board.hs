@@ -8,7 +8,7 @@ type Cell = Maybe Piece
 type Board = [[Cell]]
 
 createCell :: Player -> PieceType -> Cell
-createCell player pieceType = Just (Piece pieceType player)
+createCell player pieceType = Just (Piece pieceType player False)
 
 -- [lança, cavalo, general de prata, general de ouro, rei, general de ouro, general de prata, cavalo, lança]
 createThirdRow :: Player -> [Cell]
@@ -53,7 +53,7 @@ whiteColor  = "\x1b[37m" -- Branco
 resetColor  = "\x1b[0m"  -- Reseta para cor padrão
 
 printPiece :: Piece -> String
-printPiece (Piece pieceType player) = case player of
+printPiece (Piece pieceType player _) = case player of
     A -> case pieceType of
         Peao          -> yellowColor ++ "P" ++ resetColor
         Lanca         -> yellowColor ++ "L" ++ resetColor
@@ -79,7 +79,7 @@ printCell (Just piece) = " " ++ printPiece piece ++ " "
 
 printBoard :: Board -> IO ()
 printBoard board = do
-    putStrLn " a | b | c | d | e | f | g | h | i "
+    putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
     putStrLn "-----------------------------------"
     putStrLn (unlines (zipWith showRow board [1..9]))
     where
