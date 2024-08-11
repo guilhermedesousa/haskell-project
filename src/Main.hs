@@ -26,23 +26,33 @@ handleUserInput board = do
       else do
         let positions = words input
         if length positions /= 2
-          then putStrLn "Formato inválido. Use o formato '3a 4a'."
+          then do
+            putStrLn "Formato inválido. Use o formato '3a 4a'."
+            handleUserInput board  -- Permite tentar novamente
           else do
             let [srcPos, destPos] = positions
             let (srcRow, srcCol) = parsePosition srcPos
             let (destRow, destCol) = parsePosition destPos
             let pieceAtSrc = getPieceFromPosition (srcRow, srcCol) board
-            putStrLn $ "Posição de origem: (" ++ show srcRow ++ ", " ++ show srcCol ++ ")"
-            putStrLn $ "Posição de destino: (" ++ show destRow ++ ", " ++ show destCol ++ ")"
+            let pieceAtDest = getPieceFromPosition (destRow, destCol) board
             case pieceAtSrc of
-              Nothing -> putStrLn $ "Não há peça na posição " ++ srcPos
+              Nothing -> do
+                putStrLn $ "Não há peça na posição " ++ srcPos
+                handleUserInput board  -- Permite tentar novamente
               Just piece -> do
-                let updatedBoard = movePiece (srcRow, srcCol) (destRow, destCol) board
-                case updatedBoard of
-                  Nothing -> putStrLn "Movimento inválido."
-                  Just updatedBoard -> do
-                    putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show piece
-                    printBoard updatedBoard
-                    handleUserInput updatedBoard  -- Chama a função novamente para continuar o loop
+                case pieceAtDest of
+                  Just destPiece | getPlayer piece == getPlayer destPiece -> do
+                    putStrLn "Movimento inválido: Não pode capturar uma peça do mesmo time."
+                    handleUserInput board  -- Permite tentar novamente
+                  _ -> do
+                    let updatedBoard = movePiece (srcRow, srcCol) (destRow, destCol) board
+                    case updatedBoard of
+                      Nothing -> do
+                        putStrLn "Movimento inválido."
+                        handleUserInput board  -- Permite tentar novamente
+                      Just updatedBoard -> do
+                        putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show piece
+                        printBoard updatedBoard
+                        handleUserInput updatedBoard  -- Chama a função novamente para continuar o loop
 
         

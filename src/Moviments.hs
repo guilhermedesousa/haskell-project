@@ -1,61 +1,34 @@
 module Moviments where
 
-import Piece
+import Piece hiding (isPromoted)
 import Board
 import Utils
 import Player
-
--- Função principal para mover uma peça
--- movePiece :: Position -> Position -> Board -> Maybe Board
--- movePiece fromPos toPos board =
---     let maybePiece = getPieceFromPosition fromPos board
---         newBoard = placePiece fromPos Nothing board
---     in case maybePiece of
---         Just Rei ->
---             if isValidReiMove fromPos toPos
---                 then Just (placePiece toPos (Just Rei) newBoard)
---             else Nothing
---         Just Peao ->
---             if isValidPeaoMove fromPos toPos board
---                 then Just (placePiece toPos (Just Peao) newBoard)
---             else Nothing
---         Just Cavalo ->
---             if isValidCavaloMove fromPos toPos board
---                 then Just (placePiece toPos (Just Cavalo) newBoard)
---             else Nothing
---         Just Bispo ->
---             if isValidBispoMove fromPos toPos board
---                 then Just (placePiece toPos (Just Bispo) newBoard)
---             else Nothing
---         Just Torre ->
---             if isValidTorreMove fromPos toPos board
---                 then Just (placePiece toPos (Just Torre) newBoard)
---             else Nothing
---         Just General_Ouro ->
---             if isValidGeneral_OuroMove fromPos toPos board
---                 then Just (placePiece toPos (Just General_Ouro) newBoard)
---             else Nothing
---         Nothing -> Nothing
 
 movePiece :: Position -> Position -> Board -> Maybe Board
 movePiece fromPos toPos board =
     let maybePiece = getPieceFromPosition fromPos board
         newBoard = placePiece fromPos Nothing board
     in case maybePiece of
-        Just (Piece Lanca player isPromoted) -> 
-            if isValidLanceMove fromPos toPos player board
-                then Just (placePiece toPos (Just (Piece Lanca player isPromoted)) newBoard)
-            else Nothing
-        Just (Piece Cavalo player isPromoted) -> Just (placePiece toPos (Just (Piece Cavalo player isPromoted)) newBoard)
-        Just (Piece General_Prata player isPromoted) -> Just (placePiece toPos (Just (Piece General_Prata player isPromoted)) newBoard)
-        Just (Piece General_Ouro player isPromoted) -> Just (placePiece toPos (Just (Piece General_Ouro player isPromoted)) newBoard)
-        Just (Piece Rei player isPromoted) -> Just (placePiece toPos (Just (Piece Rei player isPromoted)) newBoard)
-        Just (Piece Bispo player isPromoted) -> Just (placePiece toPos (Just (Piece Bispo player isPromoted)) newBoard)
-        Just (Piece Torre player isPromoted) -> Just (placePiece toPos (Just (Piece Torre player isPromoted)) newBoard)
-        Just (Piece Peao player isPromoted) -> 
-            if isValidPawnMove fromPos toPos player board
-                then Just (placePiece toPos (Just (Piece Peao player isPromoted)) newBoard)
-            else Nothing
+        Just (Piece pieceType player isPromoted) -> 
+            if pieceType == Lanca && tryLanceMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Lanca player isPromoted)) newBoard)
+            else if pieceType == Cavalo && tryHorseMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Cavalo player isPromoted)) newBoard)
+            else if pieceType == General_Prata && trySilverMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece General_Prata player isPromoted)) newBoard)
+            else if pieceType == General_Ouro && tryGoldMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece General_Ouro player isPromoted)) newBoard)
+            else if pieceType == Rei && tryKingMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Rei player isPromoted)) newBoard)
+            else if pieceType == Bispo && tryBishopMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Bispo player isPromoted)) newBoard)
+            else if pieceType == Torre && tryTowerMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Torre player isPromoted)) newBoard)
+            else if pieceType == Peao && tryPawnMove fromPos toPos player board then
+                Just (placePiece toPos (Just (Piece Peao player isPromoted)) newBoard)
+            else
+                Nothing
         Nothing -> Nothing
 
 placePiece :: Position -> Maybe Piece -> Board -> Board
@@ -75,8 +48,8 @@ getPieceFromPosition (row, col) board =
     then (board !! row) !! col  -- Acessa a célula na posição (row, col)
     else Nothing  -- Se a posição estiver fora dos limites
 
-isValidPawnMove :: Position -> Position -> Player -> Board -> Bool
-isValidPawnMove (srcRow, srcCol) (desRow, desCol) player board =
+tryPawnMove :: Position -> Position -> Player -> Board -> Bool
+tryPawnMove (srcRow, srcCol) (desRow, desCol) player board =
     let deltaX = desRow - srcRow
         deltaY = desCol - srcCol
         pieceAtDest = getPieceFromPosition (desRow, desCol) board
@@ -89,9 +62,9 @@ isValidPawnMove (srcRow, srcCol) (desRow, desCol) player board =
         A -> validMove 1
         B -> validMove (-1)
 
-isValidLanceMove :: Position -> Position -> Player -> Board -> Bool
-isValidLanceMove (srcRow, srcCol) (desRow, desCol) player board
-    | srcCol /= desCol = False  -- Movimento não é vertical
+tryLanceMove :: Position -> Position -> Player -> Board -> Bool
+tryLanceMove (srcRow, srcCol) (desRow, desCol) player board
+    | srcCol /= desCol = False  -- Movimento não é horizontal
     | otherwise = validMove && pathClear
   where
     positions = [(row, srcCol) | row <- [min srcRow desRow + 1 .. max srcRow desRow - 1]]
@@ -101,3 +74,81 @@ isValidLanceMove (srcRow, srcCol) (desRow, desCol) player board
     validMove = case player of
         A -> desRow > srcRow
         B  -> desCol < srcRow
+
+tryKingMove :: Position -> Position -> Player -> Board -> Bool
+tryKingMove (srcRow, srcCol) (desRow, desCol) _ _ =
+    let deltaX = abs (desRow - srcRow)
+        deltaY = abs (desCol - srcCol)
+    in deltaX <= 1 && deltaY <= 1
+
+-- Função para verificar se o movimento de um bispo é válido
+tryBishopMove :: Position -> Position -> Player -> Board -> Bool
+tryBishopMove (srcRow, srcCol) (desRow, desCol) player board =
+    let deltaX = abs (desRow - srcRow)
+        deltaY = abs (desCol - srcCol)
+        validDiagonal = deltaX == deltaY
+        -- Calcular as posições intermediárias
+        positions = if validDiagonal
+                    then zip (range srcRow desRow) (range srcCol desCol)
+                    else []
+        noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
+    in validDiagonal && noObstructions
+  where
+    -- Função auxiliar para gerar uma lista de inteiros entre dois valores
+    range start end = if start < end
+                      then [start + 1 .. end - 1]
+                      else [start - 1, start - 2 .. end + 1]
+
+tryTowerMove :: Position -> Position -> Player -> Board -> Bool
+tryTowerMove (srcRow, srcCol) (desRow, desCol) player board =
+    let -- Verifica se o movimento é horizontal ou vertical
+        validMove = (srcRow == desRow || srcCol == desCol)
+        -- Função auxiliar para calcular as posições intermediárias para movimentos horizontais ou verticais
+        positions = if validMove
+                    then if srcRow == desRow
+                         then zip (repeat srcRow) (range srcCol desCol)
+                         else zip (range srcRow desRow) (repeat srcCol)
+                    else []
+        noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
+    in validMove && noObstructions
+  where
+    -- Função auxiliar para gerar uma lista de inteiros entre dois valores
+    range start end = if start < end
+                      then [start + 1 .. end - 1]
+                      else [start - 1, start - 2 .. end + 1]
+
+-- Função para verificar se o movimento de um cavalo é válido
+tryHorseMove :: (Int, Int) -> (Int, Int) -> Player -> Board -> Bool
+tryHorseMove (srcRow, srcCol) (desRow, desCol) player board =
+    let deltaX = desRow - srcRow
+        deltaY = abs (desCol - srcCol)
+        adjustedDeltaX = case player of
+                           A -> 2
+                           B -> -2
+    in (deltaX == adjustedDeltaX && deltaY == 1)
+
+tryGoldMove :: (Int, Int) -> (Int, Int) -> Player -> Board -> Bool
+tryGoldMove (srcRow, srcCol) (desRow, desCol) player board =
+    let deltaX = desRow - srcRow
+        deltaY = desCol - srcCol
+        -- Verificar se o movimento é válido para o Rei
+        isKingMove = deltaX <= 1 && deltaY <= 1 && deltaX >= -1 && deltaY >= -1
+        -- Verificar se o movimento é um movimento de Cavalo com base no jogador
+        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
+        -- Ajustar movimento do cavalo baseado no jogador
+        adjustedDiagonalMove = case player of
+                             A -> isDiagonalMove && (deltaX == -1 && abs deltaY == 1)
+                             B -> isDiagonalMove && (deltaX == 1 && abs deltaY == 1)
+    in isKingMove && not adjustedDiagonalMove
+
+trySilverMove :: (Int, Int) -> (Int, Int) -> Player -> Board -> Bool
+trySilverMove (srcRow, srcCol) (desRow, desCol) player board =
+    let deltaX = desRow - srcRow
+        deltaY = desCol - srcCol
+        -- Verificar se o movimento é um movimento de Cavalo com base no jogador
+        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
+        -- Ajustar movimento do cavalo baseado no jogador
+        isForwardMove = case player of
+                             A -> deltaX == 1
+                             B -> deltaX == -1
+    in isDiagonalMove || isForwardMove
