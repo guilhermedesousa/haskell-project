@@ -4,9 +4,9 @@ import Data.List (intercalate)
 import Player
 import Piece
 import Utils
+
 type Cell = Maybe Piece
 type Board = [[Cell]]
-
 
 createCell :: Player -> PieceType -> Cell
 createCell player pieceType = Just (Piece pieceType player False)
@@ -51,9 +51,9 @@ updateRow y newCell row = take y row ++ [newCell] ++ drop (y + 1) row
 
 updateCell :: Position -> Position -> Cell -> Board -> Board
 updateCell (xi, yi) (xf, yf) newCell board =
-    let -- Atualiza a linha de origem removendo a peça
+    let -- Atualiza a linha de origem, removendo a peça
         updatedSourceRow = updateRow yi Nothing (board !! xi)
-        -- Atualiza a linha de destino adicionando a peça
+        -- Atualiza a linha de destino, adicionando a peça
         updatedDestRow = updateRow yf newCell (board !! xf)
         -- Constrói o novo tabuleiro
         newBoard = take xi board ++ [updatedSourceRow] ++ drop (xi + 1) (take xf board) ++ [updatedDestRow] ++ drop (xf + 1) board
