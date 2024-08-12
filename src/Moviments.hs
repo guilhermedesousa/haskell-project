@@ -64,7 +64,7 @@ tryPawnMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
             pieceAtDest = getPieceFromPosition (desRow, desCol) board
             isForwardMove = abs deltaX == 1
             isCapture = abs deltaY == 0
-            validMove step = isForwardMove && deltaX == step || isCapture && deltaX == step && case pieceAtDest of
+            validMove step = isForwardMove && deltaX == step && isCapture || isCapture && deltaX == step && case pieceAtDest of
                 Just _  -> True
                 Nothing -> False
         in case player of
