@@ -15,6 +15,9 @@ playShogi :: Player -> Board -> IO ()
 playShogi curPlayer board = do
   putStrLn $ show curPlayer ++ " está jogando...\n"
   printBoard board
+
+  -- TODO: verificar estado do jogo
+
   handlePlayerInput curPlayer board
 
 handlePlayerInput :: Player -> Board -> IO ()
@@ -58,6 +61,6 @@ handlePlayerInput player board = do
                       putStrLn "Movimento inválido."
                       handlePlayerInput player board  -- Permite tentar novamente
                     Just updatedBoard -> do
-                      putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show piece
-                      printBoard updatedBoard
-                      handlePlayerInput player updatedBoard  -- Chama a função novamente para continuar o loop
+                      putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show piece ++ "\n"
+                      let nextPlayer = if player == A then B else A
+                      playShogi nextPlayer updatedBoard  -- Chama a função para jogar novamente

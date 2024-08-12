@@ -59,6 +59,12 @@ updateCell (xi, yi) (xf, yf) newCell board =
         newBoard = take xi board ++ [updatedSourceRow] ++ drop (xi + 1) (take xf board) ++ [updatedDestRow] ++ drop (xf + 1) board
     in newBoard
 
+isPromotionZone :: Player -> Position -> Bool
+isPromotionZone player (row, _) =
+    case player of
+        A -> row == 6 || row == 7 || row == 8
+        B -> row == 2 || row == 1 || row == 0
+
 greenColor, yellowColor, blueColor, whiteColor, resetColor :: String
 greenColor  = "\x1b[92m" -- Verde
 yellowColor = "\x1b[33m" -- Amarelo
@@ -67,25 +73,29 @@ whiteColor  = "\x1b[37m" -- Branco
 resetColor  = "\x1b[0m"  -- Reseta para cor padrão
 
 printPiece :: Piece -> String
-printPiece (Piece pieceType player _) = case player of
+printPiece (Piece pieceType player isPromoted) = case player of
     A -> case pieceType of
-        Peao          -> yellowColor ++ "P" ++ resetColor
-        Lanca         -> yellowColor ++ "L" ++ resetColor
-        Cavalo        -> yellowColor ++ "C" ++ resetColor
-        General_Prata -> yellowColor ++ "S" ++ resetColor
-        General_Ouro  -> yellowColor ++ "G" ++ resetColor
-        Bispo         -> yellowColor ++ "B" ++ resetColor
-        Torre         -> yellowColor ++ "T" ++ resetColor
-        Rei           -> yellowColor ++ "R" ++ resetColor
+        Peao          -> pieceColor ++ "P" ++ resetColor
+        Lanca         -> pieceColor ++ "L" ++ resetColor
+        Cavalo        -> pieceColor ++ "C" ++ resetColor
+        General_Prata -> pieceColor ++ "S" ++ resetColor
+        General_Ouro  -> pieceColor ++ "G" ++ resetColor
+        Bispo         -> pieceColor ++ "B" ++ resetColor
+        Torre         -> pieceColor ++ "T" ++ resetColor
+        Rei           -> pieceColor ++ "R" ++ resetColor
     B -> case pieceType of
-        Peao          -> blueColor ++ "P" ++ resetColor
-        Lanca         -> blueColor ++ "L" ++ resetColor
-        Cavalo        -> blueColor ++ "C" ++ resetColor
-        General_Prata -> blueColor ++ "S" ++ resetColor
-        General_Ouro  -> blueColor ++ "G" ++ resetColor
-        Bispo         -> blueColor ++ "B" ++ resetColor
-        Torre         -> blueColor ++ "T" ++ resetColor
-        Rei           -> blueColor ++ "R" ++ resetColor
+        Peao          -> pieceColor ++ "P" ++ resetColor
+        Lanca         -> pieceColor ++ "L" ++ resetColor
+        Cavalo        -> pieceColor ++ "C" ++ resetColor
+        General_Prata -> pieceColor ++ "S" ++ resetColor
+        General_Ouro  -> pieceColor ++ "G" ++ resetColor
+        Bispo         -> pieceColor ++ "B" ++ resetColor
+        Torre         -> pieceColor ++ "T" ++ resetColor
+        Rei           -> pieceColor ++ "R" ++ resetColor
+    where
+        pieceColor = case player of
+            A -> if isPromoted then greenColor else yellowColor
+            B -> if isPromoted then whiteColor else blueColor
 
 printCell :: Cell -> String
 printCell Nothing      = "   "
