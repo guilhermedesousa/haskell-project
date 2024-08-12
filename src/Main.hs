@@ -9,6 +9,12 @@ import Moviments
 main :: IO ()
 main = do
   let initialBoard = createInitialBoard
+  playShogi A initialBoard
+
+playShogi :: Player -> Board -> IO ()
+playShogi curPlayer board = do
+  putStrLn $ show curPlayer ++ " está jogando...\n"
+  printBoard board
   -- let dummyCell = createCell A Peao
   -- let newBoard = updateCell (2, 2) (3, 2) dummyCell initialBoard
   printBoard initialBoard
@@ -54,5 +60,3 @@ handleUserInput board = do
                         putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show piece
                         printBoard updatedBoard
                         handleUserInput updatedBoard  -- Chama a função novamente para continuar o loop
-
-        
