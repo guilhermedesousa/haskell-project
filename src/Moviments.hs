@@ -26,7 +26,7 @@ movePiece fromPos toPos board =
             else if pieceType == Rei && tryKingMove fromPos toPos player board then do
                 let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Rei player True) else (Piece Rei player isPromoted)
                 Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Bispo && tryBishopMove fromPos toPos player board then do
+            else if pieceType == Bispo && tryBishopMove fromPos toPos player board isPromoted then do
                 let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Bispo player True) else (Piece Bispo player isPromoted)
                 Just (placePiece toPos (Just newPiece) newBoard)
             else if pieceType == Torre && tryTowerMove fromPos toPos player board isPromoted then do
@@ -92,17 +92,19 @@ tryKingMove (srcRow, srcCol) (desRow, desCol) _ _ =
     in deltaX <= 1 && deltaY <= 1
 
 -- Função para verificar se o movimento de um bispo é válido
-tryBishopMove :: Position -> Position -> Player -> Board -> Bool
-tryBishopMove (srcRow, srcCol) (desRow, desCol) player board =
+tryBishopMove :: Position -> Position -> Player -> Board -> Bool -> Bool
+tryBishopMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
     let deltaX = abs (desRow - srcRow)
         deltaY = abs (desCol - srcCol)
-        validDiagonal = deltaX == deltaY
+        validMove = (deltaX == deltaY) || (isPromoted && validHorVer)
         -- Calcular as posições intermediárias
-        positions = if validDiagonal
+        positions = if validMove
                     then zip (range srcRow desRow) (range srcCol desCol)
                     else []
         noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
-    in validDiagonal && noObstructions
+        -- Valida se pode ir pra frente ou para os lados caso seja promovida
+        validHorVer = (deltaX == 1 || deltaY == 1)
+    in validMove && noObstructions
   where
     -- Função auxiliar para gerar uma lista de inteiros entre dois valores
     range start end = if start < end
