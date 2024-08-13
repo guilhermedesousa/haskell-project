@@ -29,7 +29,7 @@ movePiece fromPos toPos board =
             else if pieceType == Bispo && tryBishopMove fromPos toPos player board then do
                 let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Bispo player True) else (Piece Bispo player isPromoted)
                 Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Torre && tryTowerMove fromPos toPos player board then do
+            else if pieceType == Torre && tryTowerMove fromPos toPos player board isPromoted then do
                 let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Torre player True) else (Piece Torre player isPromoted)
                 Just (placePiece toPos (Just newPiece) newBoard)
             else if pieceType == Peao && tryPawnMove fromPos toPos player board isPromoted then do
@@ -109,10 +109,10 @@ tryBishopMove (srcRow, srcCol) (desRow, desCol) player board =
                       then [start + 1 .. end - 1]
                       else [start - 1, start - 2 .. end + 1]
 
-tryTowerMove :: Position -> Position -> Player -> Board -> Bool
-tryTowerMove (srcRow, srcCol) (desRow, desCol) player board =
+tryTowerMove :: Position -> Position -> Player -> Board -> Bool -> Bool
+tryTowerMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
     let -- Verifica se o movimento é horizontal ou vertical
-        validMove = (srcRow == desRow || srcCol == desCol)
+        validMove = (srcRow == desRow || srcCol == desCol) || (isPromoted && isDiagonalMove)
         -- Função auxiliar para calcular as posições intermediárias para movimentos horizontais ou verticais
         positions = if validMove
                     then if srcRow == desRow
@@ -120,6 +120,10 @@ tryTowerMove (srcRow, srcCol) (desRow, desCol) player board =
                          else zip (range srcRow desRow) (repeat srcCol)
                     else []
         noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
+        -- Verifica se o movimento é válido na diagonal caso seja uma peça promovida
+        deltaX = desRow - srcRow
+        deltaY = desCol - srcCol
+        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
     in validMove && noObstructions
   where
     -- Função auxiliar para gerar uma lista de inteiros entre dois valores
