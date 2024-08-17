@@ -136,9 +136,6 @@ handlePieceReplacement player capturedPieces board = do
                           
                         -- TODO: validate lance drop (row)
                         -- TODO: validate horse drop (row)
-                        putStrLn $ show capturedPieces
-                        putStrLn $ show pieceNumber
-                        putStrLn $ show pieceToReplace
 
                         let updatedCapturedPieces = removeCapturedPiece capturedPieces pieceNumber pieceToReplace
                         let updatedBoard = dropPiece pieceToReplace (destRow, destCol) board
