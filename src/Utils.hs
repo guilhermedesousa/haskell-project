@@ -1,6 +1,7 @@
 module Utils where
 
 import Data.Char (digitToInt, isDigit)
+import Text.Read (readMaybe)
 
 type Position = (Int, Int)
 
@@ -28,3 +29,6 @@ parsePosition strPos
         x = digitToInt xChar
         yChar = strPos !! 1
         y = colToInt yChar
+
+strToInt :: String -> Maybe Int
+strToInt str = readMaybe str

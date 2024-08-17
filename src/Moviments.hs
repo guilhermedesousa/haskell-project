@@ -170,3 +170,6 @@ trySilverMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
                                 A -> deltaX == 1
                                 B -> deltaX == -1
         in isDiagonalMove || isForwardMove
+
+dropPiece :: Piece -> Position -> Board -> Maybe Board
+dropPiece pieceToReplace toPos board = Just (placePiece toPos (Just pieceToReplace) board)
