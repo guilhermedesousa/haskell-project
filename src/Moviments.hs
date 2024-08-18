@@ -8,36 +8,50 @@ import Player
 movePiece :: Position -> Position -> Board -> Maybe Board
 movePiece fromPos toPos board =
     let maybePiece = getPieceFromPosition fromPos board
+        pieceAtDest = getPieceFromPosition toPos board
         newBoard = placePiece fromPos Nothing board
     in case maybePiece of
         Just (Piece pieceType player isPromoted) -> 
-            if pieceType == Lanca && tryLanceMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Lanca player True) else (Piece Lanca player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Cavalo && tryHorseMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Cavalo player True) else (Piece Cavalo player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == General_Prata && trySilverMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece General_Prata player True) else (Piece General_Prata player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == General_Ouro && tryGoldMove fromPos toPos player board then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece General_Ouro player True) else (Piece General_Ouro player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Rei && tryKingMove fromPos toPos player board then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Rei player True) else (Piece Rei player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Bispo && tryBishopMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Bispo player True) else (Piece Bispo player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Torre && tryTowerMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Torre player True) else (Piece Torre player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else if pieceType == Peao && tryPawnMove fromPos toPos player board isPromoted then do
-                let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Peao player True) else (Piece Peao player isPromoted)
-                Just (placePiece toPos (Just newPiece) newBoard)
-            else
-                Nothing
+            -- Verifica se a posição de destino é válida e não está ocupada por uma peça aliada
+            if not (isValidPosition toPos) then Nothing
+            else case pieceAtDest of
+                Just (Piece _ destPlayer _) | destPlayer == player -> Nothing
+                _ -> if pieceType == Lanca && tryLanceMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Lanca player True) else (Piece Lanca player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == Cavalo && tryHorseMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Cavalo player True) else (Piece Cavalo player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == General_Prata && trySilverMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece General_Prata player True) else (Piece General_Prata player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == General_Ouro && tryGoldMove fromPos toPos player board then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece General_Ouro player True) else (Piece General_Ouro player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == Rei && tryKingMove fromPos toPos player board then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Rei player True) else (Piece Rei player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == Bispo && tryBishopMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Bispo player True) else (Piece Bispo player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == Torre && tryTowerMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Torre player True) else (Piece Torre player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else if pieceType == Peao && tryPawnMove fromPos toPos player board isPromoted then do
+                        let newPiece = if not isPromoted && isPromotionZone player toPos then (Piece Peao player True) else (Piece Peao player isPromoted)
+                        Just (placePiece toPos (Just newPiece) newBoard)
+                     else
+                        Nothing
         Nothing -> Nothing
+
+
+isValidMove :: Position -> Position -> Board -> Bool
+isValidMove fromPos toPos board =
+    case getPieceFromPosition fromPos board of
+        Just piece -> case movePiece fromPos toPos board of
+            Just newBoard -> True
+            Nothing -> False
+        Nothing -> False
 
 placePiece :: Position -> Maybe Piece -> Board -> Board
 placePiece (row, col) maybePiece board =

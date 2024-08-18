@@ -17,9 +17,15 @@ createThirdRow player = [createCell player Lanca, createCell player Cavalo, crea
                          createCell player General_Ouro, createCell player Rei, createCell player General_Ouro,
                          createCell player General_Prata, createCell player Cavalo, createCell player Lanca]
 
+-- [vazio, torre, vazio, vazio, vazio, vazio, vazio, bispo, vazio]
+createSecondRowA :: Player -> [Cell]
+createSecondRowA player = [Nothing, createCell player Torre, Nothing,
+                          Nothing, Nothing, Nothing,
+                          Nothing, createCell player Bispo, Nothing]
+
 -- [vazio, bispo, vazio, vazio, vazio, vazio, vazio, torre, vazio]
-createSecondRow :: Player -> [Cell]
-createSecondRow player = [Nothing, createCell player Bispo, Nothing,
+createSecondRowB :: Player -> [Cell]
+createSecondRowB player = [Nothing, createCell player Bispo, Nothing,
                           Nothing, Nothing, Nothing,
                           Nothing, createCell player Torre, Nothing]
 
@@ -37,13 +43,13 @@ createEmptyRow = [Nothing, Nothing, Nothing,
 createInitialBoard :: Board
 createInitialBoard = [
     createThirdRow A,
-    createSecondRow A,
+    createSecondRowA A,
     createFirstRow A,
     createEmptyRow,
     createEmptyRow,
     createEmptyRow,
     createFirstRow B,
-    createSecondRow B,
+    createSecondRowB B,
     createThirdRow B]
 
 updateRow :: Int -> Cell -> [Cell] -> [Cell]

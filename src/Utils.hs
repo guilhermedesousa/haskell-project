@@ -20,3 +20,10 @@ parsePosition strPos = (x, y)
     where
         x = digitToInt (strPos !! 0) - 1
         y = colToInt $ strPos !! 1
+
+isValidPosition :: Position -> Bool
+isValidPosition (row, col) = row >= 0 && row < 9 && col >= 0 && col < 9
+
+-- Gera todas as posições do tabuleiro
+allPositions :: [Position]
+allPositions = [(row, col) | row <- [0..8], col <- [0..8]]
