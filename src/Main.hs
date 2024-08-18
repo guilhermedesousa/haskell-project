@@ -29,15 +29,12 @@ playShogi curPlayer board capturedPieces = do
   putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
 
   let isInCheckMate = isCheckmate curPlayer board
-  putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheckMate then " está em cheque mate!" else " não está em cheque mate.")
-
-  -- let escapes = findEscapeMove curPlayer board
-  -- putStrLn "Posições de escape:"
-  -- print escapes
-
-  -- TODO: verificar estado do jogo
-
-  handlePlayerInput curPlayer capturedPieces board
+  if isInCheckMate
+    then do
+      let winner = opponent curPlayer
+      putStrLn $ "O jogador " ++ show winner ++ " venceu o jogo!"
+    else do
+      handlePlayerInput curPlayer capturedPieces board
 
 handlePlayerInput :: Player -> CapturedPieces -> Board -> IO ()
 handlePlayerInput player capturedPieces board = do
@@ -84,17 +81,23 @@ handlePlayerInput player capturedPieces board = do
                           putStrLn "Movimento inválido: Não pode capturar uma peça do mesmo time."
                           handlePlayerInput player capturedPieces board  -- Permite tentar novamente
                         _ -> do
-                          let updatedBoard = movePiece (srcRow, srcCol) (destRow, destCol) board
-                          let pieceAtDest = getPieceFromPosition (destRow, destCol) board
-                          let updatedCapturedPieces = addCapturedPiece capturedPieces pieceAtDest
-                          case updatedBoard of
+                          let maybeUpdatedBoard = movePiece (srcRow, srcCol) (destRow, destCol) board
+                          case maybeUpdatedBoard of
                             Nothing -> do
                               putStrLn "Movimento inválido."
                               handlePlayerInput player capturedPieces board  -- Permite tentar novamente
                             Just updatedBoard -> do
-                              putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show (getType piece) ++ "\n"
-                              let nextPlayer = if player == A then B else A
-                              playShogi nextPlayer updatedBoard updatedCapturedPieces  -- Chama a função para jogar novamente
+                              -- Verifica se o movimento deixa o rei em cheque
+                              if isKingInCheck player updatedBoard
+                                then do
+                                  putStrLn "Movimento inválido: Não se pode colocar em cheque."
+                                  handlePlayerInput player capturedPieces board  -- Permite tentar novamente
+                                else do
+                                  let pieceAtDest = getPieceFromPosition (destRow, destCol) board
+                                  let updatedCapturedPieces = addCapturedPiece capturedPieces pieceAtDest
+                                  putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show (getType piece) ++ "\n"
+                                  let nextPlayer = opponent player
+                                  playShogi nextPlayer updatedBoard updatedCapturedPieces  -- Chama a função para jogar novamente
 
 handlePieceReplacement :: Player -> CapturedPieces -> Board -> IO ()
 handlePieceReplacement player capturedPieces board = do
