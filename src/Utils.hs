@@ -1,6 +1,7 @@
 module Utils where
 
-import Data.Char
+import Data.Char (digitToInt, isDigit)
+import Text.Read (readMaybe)
 
 type Position = (Int, Int)
 
@@ -14,12 +15,20 @@ colToInt 'f' = 5
 colToInt 'g' = 6
 colToInt 'h' = 7
 colToInt 'i' = 8
+colToInt _   = -1 -- para valores inválidos
 
-parsePosition :: String -> Position
-parsePosition strPos = (x, y)
+parsePosition :: String -> Maybe Position
+parsePosition strPos
+    | length strPos /= 2  = Nothing
+    | not (isDigit xChar) = Nothing
+    | x < 1 || x > 9      = Nothing
+    | y < 0 || y > 8      = Nothing
+    | otherwise           = Just (x - 1, y)
     where
-        x = digitToInt (strPos !! 0) - 1
-        y = colToInt $ strPos !! 1
+        xChar = strPos !! 0
+        x = digitToInt xChar
+        yChar = strPos !! 1
+        y = colToInt yChar
 
 isValidPosition :: Position -> Bool
 isValidPosition (row, col) = row >= 0 && row < 9 && col >= 0 && col < 9
@@ -27,3 +36,6 @@ isValidPosition (row, col) = row >= 0 && row < 9 && col >= 0 && col < 9
 -- Gera todas as posições do tabuleiro
 allPositions :: [Position]
 allPositions = [(row, col) | row <- [0..8], col <- [0..8]]
+
+strToInt :: String -> Maybe Int
+strToInt str = readMaybe str

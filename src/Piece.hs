@@ -9,3 +9,6 @@ data Piece = Piece { getType    :: PieceType,
                      getPlayer  :: Player,
                      isPromoted :: Bool
                    } deriving (Eq, Show)
+
+pieceToString :: Piece -> String
+pieceToString piece = show (getType piece)
