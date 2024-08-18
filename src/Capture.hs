@@ -1,8 +1,7 @@
-module Capture where
+module Capture (CapturedPieces, addCapturedPiece, removeCapturedPiece, printCapturedPieces, parsePieceChoice, validReplacement) where
 
 import Data.Maybe (catMaybes, isJust)
 import Data.List (intercalate)
-import Data.Char (digitToInt, isDigit)
 import Piece
 import Player
 import Utils
@@ -11,18 +10,18 @@ import Board
 type CapturedPieces = ([Maybe Piece], [Maybe Piece])
 
 addCapturedPiece :: CapturedPieces -> Maybe Piece -> CapturedPieces
-addCapturedPiece capturedPieces piece = case piece of
+addCapturedPiece capturedPieces newPiece = case newPiece of
     Nothing    -> capturedPieces
     Just piece -> do
         let player    = getPlayer piece
         let pieceType = getType piece
         case player of
             A -> do
-                let newPiece = Just (Piece pieceType B False)
-                (fst capturedPieces, addToPlayerList (snd capturedPieces) newPiece)
+                let newPieceB = Just (Piece pieceType B False)
+                (fst capturedPieces, addToPlayerList (snd capturedPieces) newPieceB)
             B -> do
-                let newPiece = Just (Piece pieceType A False)
-                (addToPlayerList (fst capturedPieces) newPiece, snd capturedPieces)
+                let newPieceA = Just (Piece pieceType A False)
+                (addToPlayerList (fst capturedPieces) newPieceA, snd capturedPieces)
 
 removeCapturedPiece :: CapturedPieces -> Int -> Piece -> CapturedPieces
 removeCapturedPiece capturedPieces i piece = case (getPlayer piece) of
@@ -38,6 +37,7 @@ removeFromPlayerList xs i = take i xs ++ drop (i + 1) xs
 indexCapturedPieces :: [Piece] -> [String]
 indexCapturedPieces pieces = zipWith showIndexedPiece pieces [1..]
     where
+        showIndexedPiece :: Piece -> Int -> String
         showIndexedPiece piece n = show n ++ ": " ++ pieceToString piece
 
 printCapturedPieces :: [Maybe Piece] -> IO ()
@@ -56,9 +56,13 @@ validReplacement pieceToReplace (destRow, destCol) board = case (pieceToReplace)
                 let player = getPlayer piece
 
                 -- verifica se há outro peão não promovido na mesma coluna
-                let colHasUnpromotedPawn = any (\(row, Just mPiece) -> (getType mPiece) == Peao && not (isPromoted mPiece)) $ -- verifica se tem algum peão promovido
-                                           filter (\(row, Just mPiece) -> (getPlayer mPiece) == player) $ -- filtra apenas peças do player
-                                           filter (\(row, mPiece) -> isJust mPiece) $ -- filtra apenas células do tipo 'Just Piece'
+                let colHasUnpromotedPawn = any (\(_, mPiece) -> case mPiece of
+                                                                    Just jPiece -> (getType jPiece) == Peao && not (isPromoted jPiece)
+                                                                    Nothing     -> False) $ -- verifica se tem algum peão promovido
+                                           filter (\(_, mPiece) -> case mPiece of
+                                                                        Just jPiece -> (getPlayer jPiece) == player
+                                                                        Nothing     -> False) $ -- filtra apenas peças do player
+                                           filter (\(_, mPiece) -> isJust mPiece) $ -- filtra apenas células do tipo 'Just Piece'
                                            map (\row -> (row, board !! row !! destCol)) [0..8] -- pega todas as células da coluna destCol
 
                 -- verifica se a posição destino está na última linha
