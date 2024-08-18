@@ -48,8 +48,8 @@ movePiece fromPos toPos board =
 isValidMove :: Position -> Position -> Board -> Bool
 isValidMove fromPos toPos board =
     case getPieceFromPosition fromPos board of
-        Just piece -> case movePiece fromPos toPos board of
-            Just newBoard -> True
+        Just _ -> case movePiece fromPos toPos board of
+            Just _ -> True
             Nothing -> False
         Nothing -> False
 
@@ -97,7 +97,7 @@ tryLanceMove (srcRow, srcCol) (desRow, desCol) player board isPromoted
                               Nothing -> True) positions
     validMove = case player of
         A -> desRow > srcRow
-        B  -> desCol < srcRow
+        B  -> desRow < srcRow
 
 tryKingMove :: Position -> Position -> Player -> Board -> Bool
 tryKingMove (srcRow, srcCol) (desRow, desCol) _ _ =
