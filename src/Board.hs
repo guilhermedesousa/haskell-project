@@ -1,8 +1,8 @@
-module Board where
+module Board (createInitialBoard, isPromotionZone, printBoard, Cell, Board) where
 
 import Data.List (intercalate)
 import Player
-import Piece
+import Piece hiding (isPromoted)
 import Utils
 
 type Cell = Maybe Piece
@@ -52,18 +52,18 @@ createInitialBoard = [
     createSecondRowB B,
     createThirdRow B]
 
-updateRow :: Int -> Cell -> [Cell] -> [Cell]
-updateRow y newCell row = take y row ++ [newCell] ++ drop (y + 1) row
+-- updateRow :: Int -> Cell -> [Cell] -> [Cell]
+-- updateRow y newCell row = take y row ++ [newCell] ++ drop (y + 1) row
 
-updateCell :: Position -> Position -> Cell -> Board -> Board
-updateCell (xi, yi) (xf, yf) newCell board =
-    let -- Atualiza a linha de origem, removendo a peça
-        updatedSourceRow = updateRow yi Nothing (board !! xi)
-        -- Atualiza a linha de destino, adicionando a peça
-        updatedDestRow = updateRow yf newCell (board !! xf)
-        -- Constrói o novo tabuleiro
-        newBoard = take xi board ++ [updatedSourceRow] ++ drop (xi + 1) (take xf board) ++ [updatedDestRow] ++ drop (xf + 1) board
-    in newBoard
+-- updateCell :: Position -> Position -> Cell -> Board -> Board
+-- updateCell (xi, yi) (xf, yf) newCell board =
+--     let -- Atualiza a linha de origem, removendo a peça
+--         updatedSourceRow = updateRow yi Nothing (board !! xi)
+--         -- Atualiza a linha de destino, adicionando a peça
+--         updatedDestRow = updateRow yf newCell (board !! xf)
+--         -- Constrói o novo tabuleiro
+--         newBoard = take xi board ++ [updatedSourceRow] ++ drop (xi + 1) (take xf board) ++ [updatedDestRow] ++ drop (xf + 1) board
+--     in newBoard
 
 isPromotionZone :: Player -> Position -> Bool
 isPromotionZone player (row, _) =
@@ -111,6 +111,6 @@ printBoard :: Board -> IO ()
 printBoard board = do
     putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
     putStrLn "-----------------------------------"
-    putStrLn (unlines (zipWith showRow board [1..9]))
+    putStrLn (unlines (zipWith showRow board [1..9 :: Int]))
     where
         showRow row n = intercalate "|" (map printCell row) ++ "| " ++ show n
