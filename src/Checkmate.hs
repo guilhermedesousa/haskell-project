@@ -17,31 +17,6 @@ isKingInCheck player board =
             _ -> False
     ) allPositions
 
--- Gera todos os movimentos legais para um jogador
--- allLegalMoves :: Player -> Board -> [(Position, Position)]
--- allLegalMoves player board =
---     concatMap (\(pos, piece) -> legalMovesForPiece (pos, piece) board) (playerPieces player board)
-
--- playerPieces :: Player -> Board -> [(Position, Piece)]
--- playerPieces player board = 
---     [((r, c), piece) | r <- [0..8], c <- [0..8],
---                       let pos = (r, c),
---                       Just piece <- [getPieceFromPosition pos board],
---                       getPlayer piece == player]
-
--- Função fictícia que verifica se o movimento é permitido para uma peça
--- Esta função deve ser implementada de acordo com as regras do seu jogo
--- isMoveAllowed :: Piece -> Position -> Position -> Board -> Bool
--- isMoveAllowed (Piece pieceType player isPromoted) fromPos toPos board =
---     -- Aqui você deve implementar a lógica de movimento para cada peça
---     -- Por enquanto, vamos apenas retornar True para simplificar
---     True
-
--- -- Função para verificar se um movimento é seguro
--- isMoveSafe :: (Position, Position) -> Player -> Board -> Bool
--- isMoveSafe (fromPos, toPos) player board =
---     maybe False (not . isKingInCheck player) (movePiece fromPos toPos board)
-
 isCheckmate :: Player -> Board -> Bool
 isCheckmate player board =
     isKingInCheck player board && canNotScape player board
@@ -107,10 +82,6 @@ playerPiecePositions player board =
               let pos = (r, c),
               Just piece <- [getPieceFromPosition pos board],
               getPlayer piece == player]
-
--- legalMovesForPiece :: (Position, Piece) -> Board -> [(Position, Position)]
--- legalMovesForPiece (fromPos, piece) board =
---     [(fromPos, toPos) | toPos <- allPositions, isValidMove fromPos toPos board]
 
 -- Função para encontrar a posição do rei do jogador
 findKingCoordinate :: Board -> Player -> Position
