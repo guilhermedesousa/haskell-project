@@ -177,13 +177,14 @@ trySilverMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
     if isPromoted then tryGoldMove (srcRow, srcCol) (desRow, desCol) player board else
         let deltaX = desRow - srcRow
             deltaY = desCol - srcCol
-            -- Verificar se o movimento é um movimento de Cavalo com base no jogador
+            -- Verificar se o movimento é um movimento na diagonal
             isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
             -- Ajustar movimento do cavalo baseado no jogador
+            isCapture = abs deltaY == 0
             isForwardMove = case player of
                                 A -> deltaX == 1
                                 B -> deltaX == -1
-        in isDiagonalMove || isForwardMove
+        in isDiagonalMove || (isForwardMove && isCapture)
 
 dropPiece :: Piece -> Position -> Board -> Maybe Board
 dropPiece pieceToReplace toPos board = Just (placePiece toPos (Just pieceToReplace) board)

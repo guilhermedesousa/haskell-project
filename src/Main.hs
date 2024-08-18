@@ -8,13 +8,14 @@ import Piece
 import Moviments
 import Capture
 import Checkmate
+import Checkmate (findEscapeMove)
 
 main :: IO ()
 main = do
   let initialBoard = createInitialBoard
   let capturedPieces = ([], []) -- zero peças capturadas
   
-  playShogi A initialBoard capturedPieces -- jogador A começa
+  playShogi B initialBoard capturedPieces -- jogador A começa
 
 playShogi :: Player -> Board -> CapturedPieces -> IO ()
 playShogi curPlayer board capturedPieces = do
@@ -24,6 +25,10 @@ playShogi curPlayer board capturedPieces = do
   printCapturedPieces pieces
 
   printBoard board
+
+  -- -- Apenas para debug (retorna posições para sair do check caso exista.)
+  -- let escape = findEscapeMove curPlayer board
+  -- putStrLn $ "Movimentos de escape " ++ show escape
 
   let isInCheck = isKingInCheck curPlayer board
   putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
