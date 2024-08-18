@@ -99,7 +99,6 @@ escapePositions player board =
        then filter isMoveSafe possibleMoves
        else [] -- Se o rei não está em xeque, não há posições para escapar
 
-
 -- Função auxiliar que retorna todas as posições das peças de um jogador no tabuleiro
 playerPiecePositions :: Player -> Board -> [Position]
 playerPiecePositions player board =

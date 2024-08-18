@@ -53,16 +53,38 @@ validReplacement pieceToReplace (destRow, destCol) board = case (pieceToReplace)
     Just piece -> do
         case (getType piece) of
             Peao -> do
-                -- Verifica se há outro peão não promovido na mesma coluna
-                let colHasUnpromotedPawn = any (\(row, Just mPiece) -> (getType mPiece) == Peao && not (isPromoted mPiece)) $
-                                           filter (\(row, mPiece) -> isJust mPiece) $
-                                           map (\row -> (row, board !! row !! destCol)) [0..8] -- (Int, (Int, Cell))
-
                 let player = getPlayer piece
-                -- Verifica se a posição destino está na última linha
+
+                -- verifica se há outro peão não promovido na mesma coluna
+                let colHasUnpromotedPawn = any (\(row, Just mPiece) -> (getType mPiece) == Peao && not (isPromoted mPiece)) $ -- verifica se tem algum peão promovido
+                                           filter (\(row, Just mPiece) -> (getPlayer mPiece) == player) $ -- filtra apenas peças do player
+                                           filter (\(row, mPiece) -> isJust mPiece) $ -- filtra apenas células do tipo 'Just Piece'
+                                           map (\row -> (row, board !! row !! destCol)) [0..8] -- pega todas as células da coluna destCol
+
+                -- verifica se a posição destino está na última linha
                 let isLastRow = if player == A then destRow == 8 else destRow == 0
+
                 if colHasUnpromotedPawn || isLastRow
                     then Just False
                     else Just True
-            _ -> Nothing
+            Lanca -> do
+                let player = getPlayer piece
+
+                -- verifica se a posição destino está na última linha
+                let isLastRow = if player == A then destRow == 8 else destRow == 0
+
+                if isLastRow
+                    then Just False
+                    else Just True
+            Cavalo -> do
+                let player = getPlayer piece
+
+                -- verifica se a posição destinho é na penúltima ou última linha
+                let isPenultimate = if player == A then destRow == 7 else destRow == 1
+                let isLastRow = if player == A then destRow == 8 else destRow == 0
+
+                if isPenultimate || isLastRow
+                    then Just False
+                    else Just True
+            _ -> Just True
     _ -> Nothing

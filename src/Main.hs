@@ -144,7 +144,6 @@ handlePieceReplacement player capturedPieces board = do
                         putStrLn "Movimento inválido: Peças são reposicionadas apenas em casas vazias."
                         handlePieceReplacement player capturedPieces board  -- Permite tentar novamente
                       _ -> do
-                        -- validReplacement (Just pieceToReplace) (destRow, destCol) board
                         case (validReplacement (Just pieceToReplace) (destRow, destCol) board) of
                           Nothing -> do
                             putStrLn "Reposição inválida."
@@ -153,14 +152,6 @@ handlePieceReplacement player capturedPieces board = do
                             putStrLn "Reposição inválida."
                             handlePieceReplacement player capturedPieces board  -- Permite tentar novamente
                           _ -> do
-                            -- TODO: validate pawn drop (column, row, checkmate)
-                            -- let isValidReplacement = validReplacement pieceToReplace (destRow, destCol) board
-                            -- case isValidReplacement of
-                              
-                            -- TODO: validate lance drop (row)
-                            -- TODO: validate horse drop (row)
-
-                            let updatedCapturedPieces = removeCapturedPiece capturedPieces pieceNumber pieceToReplace
                             let updatedBoard = dropPiece pieceToReplace (destRow, destCol) board
 
                             case updatedBoard of
@@ -168,16 +159,13 @@ handlePieceReplacement player capturedPieces board = do
                                 putStrLn "Movimento inválido."
                                 handlePieceReplacement player capturedPieces board  -- Permite tentar novamente
                               Just updatedBoard -> do
-                                -- putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show (getType piece) ++ "\n"
-                                let nextPlayer = if player == A then B else A
-                                playShogi nextPlayer updatedBoard updatedCapturedPieces  -- Chama a função para jogar novamente
-                            -- let pieceAtDest = getPieceFromPosition (destRow, destCol) board
-                            -- let updatedCapturedPieces = addCapturedPiece capturedPieces pieceAtDest
-                            -- case updatedBoard of
-                            --   Nothing -> do
-                            --     putStrLn "Movimento inválido."
-                            --     handlePlayerInput player capturedPieces board  -- Permite tentar novamente
-                            --   Just updatedBoard -> do
-                            --     putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show (getType piece) ++ "\n"
-                            --     let nextPlayer = if player == A then B else A
-                            --     playShogi nextPlayer updatedBoard updatedCapturedPieces  -- Chama a função para jogar novamente
+                                -- verifica se é uma reposição de checkmate
+                                let isInCheckMate = isCheckmate (opponent player) updatedBoard
+                                if isInCheckMate
+                                  then do
+                                    putStrLn "Reposição inválida: não é permitido reposicionar dando chequemate"
+                                    handlePieceReplacement player capturedPieces board  -- Permite tentar novamente
+                                  else do
+                                    let updatedCapturedPieces = removeCapturedPiece capturedPieces pieceNumber pieceToReplace
+                                    let nextPlayer = if player == A then B else A
+                                    playShogi nextPlayer updatedBoard updatedCapturedPieces -- Chama a função para jogar novamente
