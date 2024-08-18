@@ -52,25 +52,13 @@ createInitialBoard = [
     createSecondRowB B,
     createThirdRow B]
 
--- updateRow :: Int -> Cell -> [Cell] -> [Cell]
--- updateRow y newCell row = take y row ++ [newCell] ++ drop (y + 1) row
-
--- updateCell :: Position -> Position -> Cell -> Board -> Board
--- updateCell (xi, yi) (xf, yf) newCell board =
---     let -- Atualiza a linha de origem, removendo a peça
---         updatedSourceRow = updateRow yi Nothing (board !! xi)
---         -- Atualiza a linha de destino, adicionando a peça
---         updatedDestRow = updateRow yf newCell (board !! xf)
---         -- Constrói o novo tabuleiro
---         newBoard = take xi board ++ [updatedSourceRow] ++ drop (xi + 1) (take xf board) ++ [updatedDestRow] ++ drop (xf + 1) board
---     in newBoard
-
 isPromotionZone :: Player -> Position -> Bool
 isPromotionZone player (row, _) =
     case player of
         A -> row == 6 || row == 7 || row == 8
         B -> row == 2 || row == 1 || row == 0
 
+-- *códigos das cores retirados do chatgpt
 greenColor, yellowColor, blueColor, whiteColor, resetColor :: String
 greenColor  = "\x1b[92m" -- Verde
 yellowColor = "\x1b[33m" -- Amarelo
@@ -78,6 +66,7 @@ blueColor   = "\x1b[34m" -- Azul
 whiteColor  = "\x1b[37m" -- Branco
 resetColor  = "\x1b[0m"  -- Reseta para cor padrão
 
+-- *código para colorir saída no terminal retirado do chatgpt
 printPiece :: Piece -> String
 printPiece (Piece pieceType player isPromoted) = case player of
     A -> case pieceType of
@@ -107,10 +96,12 @@ printCell :: Cell -> String
 printCell Nothing      = "   "
 printCell (Just piece) = " " ++ printPiece piece ++ " "
 
+-- *código para printar as linhas numeradas retirado do chatgpt
 printBoard :: Board -> IO ()
 printBoard board = do
     putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
     putStrLn "-----------------------------------"
-    putStrLn (unlines (zipWith showRow board [1..9 :: Int]))
+    putStrLn (unlines (zipWith showRow board [1..9]))
     where
+        showRow :: [Cell] -> Int -> String
         showRow row n = intercalate "|" (map printCell row) ++ "| " ++ show n

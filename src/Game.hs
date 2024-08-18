@@ -25,10 +25,6 @@ playShogi curPlayer board capturedPieces = do
 
     printBoard board
 
-    -- -- Apenas para debug (retorna posições para sair do check caso exista.)
-    -- let escape = findEscapeMove curPlayer board
-    -- putStrLn $ "Movimentos de escape " ++ show escape
-
     let isInCheck = isKingInCheck curPlayer board
     putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
 
@@ -145,7 +141,6 @@ handlePieceReplacement player capturedPieces board = do
                                                         handlePieceReplacement player capturedPieces board  -- Permite tentar novamente
                                                     Just (destRow, destCol) -> do
                                                         let pieceToReplace = onlyPieces !! (pieceNumber - 1)
-                                                        -- let pieceAtDest = getPieceFromPosition (destRow, destCol) board
 
                                                         case (getPieceFromPosition (destRow, destCol) board) of  
                                                             Just _ -> do

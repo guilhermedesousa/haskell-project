@@ -2,6 +2,7 @@ module Capture (CapturedPieces, addCapturedPiece, removeCapturedPiece, printCapt
 
 import Data.Maybe (catMaybes, isJust)
 import Data.List (intercalate)
+import Data.Char (digitToInt)
 import Piece
 import Player
 import Utils
@@ -40,13 +41,17 @@ indexCapturedPieces pieces = zipWith showIndexedPiece pieces [1..]
         showIndexedPiece :: Piece -> Int -> String
         showIndexedPiece piece n = show n ++ ": " ++ pieceToString piece
 
+-- *código para printar as peças capturadas retirado do chatgpt (catMaybes e indexCapturedPieces)
 printCapturedPieces :: [Maybe Piece] -> IO ()
 printCapturedPieces pieces = putStrLn $ intercalate ", " (indexCapturedPieces (catMaybes pieces))
 
 parsePieceChoice :: Int -> String -> Maybe Int
-parsePieceChoice countCaptured playerChoice = case (strToInt playerChoice) of
-    Just x -> if (x < 1 || x > countCaptured) then Nothing else Just x
-    Nothing -> Nothing
+parsePieceChoice countCaptured playerChoice
+    | x < 1 || x > countCaptured = Nothing
+    | otherwise                  = Just x
+    where
+        xChar = playerChoice !! 0
+        x = digitToInt xChar
 
 validReplacement :: Maybe Piece -> Position -> Board -> Maybe Bool
 validReplacement pieceToReplace (destRow, destCol) board = case (pieceToReplace) of
@@ -55,6 +60,7 @@ validReplacement pieceToReplace (destRow, destCol) board = case (pieceToReplace)
             Peao -> do
                 let player = getPlayer piece
 
+                -- *código para filtrar apenas valores Just retirado do chatgpt (isJust)
                 -- verifica se há outro peão não promovido na mesma coluna
                 let colHasUnpromotedPawn = any (\(_, mPiece) -> case mPiece of
                                                                     Just jPiece -> (getType jPiece) == Peao && not (isPromoted jPiece)

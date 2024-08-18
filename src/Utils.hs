@@ -1,7 +1,6 @@
-module Utils where
+module Utils (Position, parsePosition, isValidPosition, allPositions) where
 
 import Data.Char (digitToInt, isDigit)
-import Text.Read (readMaybe)
 
 type Position = (Int, Int)
 
@@ -33,9 +32,6 @@ parsePosition strPos
 isValidPosition :: Position -> Bool
 isValidPosition (row, col) = row >= 0 && row < 9 && col >= 0 && col < 9
 
--- Gera todas as posições do tabuleiro
+-- gera todas as posições do tabuleiro
 allPositions :: [Position]
 allPositions = [(row, col) | row <- [0..8], col <- [0..8]]
-
-strToInt :: String -> Maybe Int
-strToInt str = readMaybe str

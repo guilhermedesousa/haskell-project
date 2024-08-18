@@ -34,45 +34,9 @@ canNotScape player board =
                                  isValidPosition toPos,
                                  Just newBoard <- [tryMovePiece fromPos toPos board]]
 
--- findEscapeMove :: Player -> Board -> Maybe (Position, Position)
--- findEscapeMove player board = 
---     case [ (fromPos, toPos) 
---          | (fromPos, toPos, newBoard) <- possibleMoves
---          , not (isKingStillInCheck player newBoard)
---          ] of
---         [] -> Nothing
---         (move:_) -> Just move
---   where
---     -- Todas as posições das peças do jogador
---     playerPositions = playerPiecePositions player board
-    
---     -- Gera todos os movimentos possíveis e seus respectivos tabuleiros
---     possibleMoves = [(fromPos, toPos, newBoard) | 
---                       fromPos <- playerPositions,
---                       toPos <- allPositions,
---                       isValidPosition toPos,
---                       Just newBoard <- [tryMovePiece fromPos toPos board]]
-
 -- Verifica se o rei ainda está em xeque no novo tabuleiro
 isKingStillInCheck :: Player -> Board -> Bool
 isKingStillInCheck = isKingInCheck
-
--- escapePositions :: Player -> Board -> [(Position, Position)]
--- escapePositions player board =
---     let inCheck = isKingInCheck player board
---         -- Obtém todas as posições das peças do jogador
---         playerPositions = playerPiecePositions player board
---         -- Gera todos os movimentos possíveis para cada peça
---         possibleMoves = [(fromPos, toPos) | fromPos <- playerPositions, toPos <- allPositions]
---         -- Verifica se algum movimento tira o rei do xeque
---         isMoveSafe (fromPos, toPos) =
---             case tryMovePiece fromPos toPos board of
---                 Just newBoard -> not (isKingInCheck player newBoard)
---                 Nothing -> False
---         -- Filtra as posições que escapam do xeque
---     in if inCheck
---        then filter isMoveSafe possibleMoves
---        else [] -- Se o rei não está em xeque, não há posições para escapar
 
 -- Função auxiliar que retorna todas as posições das peças de um jogador no tabuleiro
 playerPiecePositions :: Player -> Board -> [Position]
