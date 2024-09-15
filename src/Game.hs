@@ -48,7 +48,7 @@ movePiece = do
     if input == "sair"
         then lift $ putStrLn "Encerrando o programa."
     else if input == "repor"
-        then lift $ putStrLn "Repondo peca."
+        then replacePiece
     else do
         player <- gets currentPlayer
 
@@ -78,6 +78,11 @@ promptForMove = do
     lift $ putStrLn "\nInsira uma posição de origem e destino (ex: 3a 4a), 'repor' ou 'sair' para encerrar:"
     lift getLine
 
+promptForReplace :: ShogiGame String
+promptForReplace = do
+    lift $ putStrLn "\nInforme o número da peça que queira repor + posição de destino (ex: 1 4a), 'mover' ou 'sair' para encerrar:"
+    lift getLine
+
 parseInput :: String -> Maybe (String, String)
 parseInput input = case words input of
     [src, dest] -> Just (src, dest)
@@ -100,81 +105,71 @@ handleSuccessMove srcCoord destCoord srcPiece destPiece = do
     printCapturedPiece destPiece
     lift $ putStrLn "--------------------------------------------------"
     
+    -- adiciona a peça capturada na lista
     addCapturedPiece destPiece
     
+    -- muda o jogador da vez
     modify $ \gs -> gs { currentPlayer = opponent (currentPlayer gs) }
     
     playShogi
 
--- handlePieceReplacement :: Player -> CapturedPieces -> Board -> IO ()
--- handlePieceReplacement player capturedPieces board = do
---     let pieces = if player == A then fst capturedPieces else snd capturedPieces
---     let onlyPieces = catMaybes pieces
---     let countCaptured = length onlyPieces
---     if countCaptured == 0
---         then do
---             putStrLn "Não existem peças para repor."
---             movePiece player capturedPieces board  
---         else do
---             putStrLn "\nInforme o número da peça que queira repor + posição de destino (ex: 1 4a), 'mover' ou 'sair' para encerrar:"
---             input <- getLine
+replacePiece :: ShogiGame ()
+replacePiece = do
+    player <- gets currentPlayer
+    pieces <- getCapturedPieces player
 
---             if input == "mover"
---                 then do
---                     movePiece player capturedPieces board -- Permite mover uma peça
---                 else if input == "sair"
---                     then putStrLn "Encerrando o programa."
---                     else do
---                         let playerChoices = words input
---                         if length playerChoices /= 2
---                             then do
---                                 putStrLn "Formato inválido. Use o formato '1 4a'."
---                                 handlePieceReplacement player capturedPieces board  
---                             else do
---                                 case playerChoices of
---                                     [playerChoice, destPos] -> do
---                                         case parsePieceChoice countCaptured playerChoice of
---                                             Nothing -> do
---                                                 putStrLn "Escolha inválida."
---                                                 handlePieceReplacement player capturedPieces board  
---                                             Just pieceNumber -> do
---                                                 case parsePosition destPos of
---                                                     Nothing -> do
---                                                         putStrLn "Movimento inválido."
---                                                         handlePieceReplacement player capturedPieces board  
---                                                     Just (destRow, destCol) -> do
---                                                         let pieceToReplace = onlyPieces !! (pieceNumber - 1)
+    let onlyPieces = catMaybes pieces
+    let countCaptured = length onlyPieces
 
---                                                         case (getPieceFromPosition (destRow, destCol) board) of  
---                                                             Just _ -> do
---                                                                 putStrLn "Movimento inválido: Peças são reposicionadas apenas em casas vazias."
---                                                                 handlePieceReplacement player capturedPieces board  
---                                                             _ -> do
---                                                                 case (validReplacement (Just pieceToReplace) (destRow, destCol) board) of
---                                                                     Nothing -> do
---                                                                         putStrLn "Reposição inválida."
---                                                                         handlePieceReplacement player capturedPieces board  
---                                                                     Just False -> do
---                                                                         putStrLn "Reposição inválida."
---                                                                         handlePieceReplacement player capturedPieces board  
---                                                                     _ -> do
---                                                                         let isPieceDropped = dropPiece pieceToReplace (destRow, destCol) board
+    if countCaptured == 0
+        then do
+            lift $ putStrLn "Não existem peças para repor."
+            movePiece
+    else do
+        input <- promptForReplace
 
---                                                                         case isPieceDropped of
---                                                                             Nothing -> do
---                                                                                 putStrLn "Movimento inválido."
---                                                                                 handlePieceReplacement player capturedPieces board  
---                                                                             Just updatedBoard -> do
---                                                                                 -- verifica se é uma reposição de checkmate
---                                                                                 let isInCheckMate = isCheckmate (opponent player) updatedBoard
---                                                                                 if isInCheckMate
---                                                                                     then do
---                                                                                         putStrLn "Reposição inválida: não é permitido reposicionar dando chequemate"
---                                                                                         handlePieceReplacement player capturedPieces board  
---                                                                                     else do
---                                                                                         let updatedCapturedPieces = removeCapturedPiece capturedPieces pieceNumber pieceToReplace
---                                                                                         let nextPlayer = if player == A then B else A
---                                                                                         playShogi nextPlayer updatedBoard updatedCapturedPieces -- Chama a função para jogar novamente
---                                     _ -> do
---                                         putStrLn "Formato inválido. Use o formato '1 4a'."
---                                         handlePieceReplacement player capturedPieces board  
+        if input == "sair"
+            then lift $ putStrLn "Encerrando o programa."
+        else if input == "mover"
+            then movePiece
+        else do
+            case parseInput input of
+                Nothing -> do
+                    lift $ putStrLn "Formato inválido. Use o formato '1 4a'."
+                    replacePiece
+                Just (pieceNo, destPos) -> do
+                    let mPieceNumber = parsePieceChoice countCaptured pieceNo
+                    let mDestCoord = parsePosition destPos
+
+                    case (mPieceNumber, mDestCoord) of
+                        (Nothing, _) -> do
+                            lift $ putStrLn "Escolha de peça inválida."
+                            replacePiece
+                        (_, Nothing) -> do
+                            lift $ putStrLn "Posição de destino inválida."
+                            replacePiece
+                        (Just pieceNumber, Just destCoord) -> do
+                            let pieceToReplace = onlyPieces !! (pieceNumber - 1)
+                            dstPiece <- getPieceFromPosition destCoord
+                            case dstPiece of
+                                Just _ -> do
+                                    lift $ putStrLn "Movimento inválido: Peças são reposicionadas apenas em casas vazias."
+                                    replacePiece
+                                _ -> do
+                                    isValidReplacement <- validReplacement (Just pieceToReplace) destCoord
+                                    case isValidReplacement of
+                                        False -> do
+                                            lift $ putStrLn "Reposição inválida."
+                                            replacePiece
+                                        _ -> do
+                                            dropPiece pieceToReplace destCoord
+                                            
+                                            lift $ putStrLn "--------------------------------------------------"
+                                            
+                                            -- remove a peça capturada da lista
+                                            removeCapturedPiece pieceNumber pieceToReplace
+
+                                            -- muda o jogador da vez
+                                            modify $ \gs -> gs { currentPlayer = opponent (currentPlayer gs) }
+
+                                            playShogi
