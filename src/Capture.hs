@@ -70,6 +70,7 @@ printCapturedPieces = do
     
     lift $ putStrLn $ "Peças capturadas pelo jogador " ++ show curPlayer ++ ": "
     lift $ putStrLn $ intercalate ", " (indexCapturedPieces (catMaybes pieces))
+    lift $ putStrLn "\n"
 
 printCapturedPiece :: Maybe Piece -> ShogiGame ()
 printCapturedPiece mPiece = do

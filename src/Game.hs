@@ -23,12 +23,12 @@ playShogi = do
     b         <- gets board
     capPieces <- gets capturedPieces
     
-    lift $ putStrLn $ show curPlayer ++ " está jogando...\n"
+    lift $ putStrLn $ "\n" ++ show curPlayer ++ " está jogando...\n"
     
     printCapturedPieces
     printBoard
     movePiece
-    
+
     -- isInCheck <- isKingInCheck curPlayer b
     -- lift $ putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
 
@@ -45,33 +45,33 @@ movePiece :: ShogiGame ()
 movePiece = do
     input <- promptForMove
 
-    -- *early stop retirado do claude.ai
-    when (input == "sair") $ do
-        lift $ putStrLn "Encerrando o programa."
-        return ()
+    if input == "sair"
+        then lift $ putStrLn "Encerrando o programa."
+    else if input == "repor"
+        then lift $ putStrLn "Repondo peca."
+    else do
+        player <- gets currentPlayer
 
-    player <- gets currentPlayer
+        -- *exemplo de computação que pode falhar retirado do claude.ai
+        mMove <- runMaybeT $ do
+            (srcPos, destPos)     <- MaybeT $ return $ parseInput input
+            (srcCoord, destCoord) <- MaybeT $ return $ liftM2 (,) (parsePosition srcPos) (parsePosition destPos)
+            srcPiece              <- MaybeT $ getPieceFromPosition srcCoord
+            result                <- lift $ validateMove player srcCoord destCoord srcPiece
+            return (srcCoord, destCoord, srcPiece)
 
-    -- *exemplo de computação que pode falhar retirado do claude.ai
-    mMove <- runMaybeT $ do
-        (srcPos, destPos)     <- MaybeT $ return $ parseInput input
-        (srcCoord, destCoord) <- MaybeT $ return $ liftM2 (,) (parsePosition srcPos) (parsePosition destPos)
-        srcPiece              <- MaybeT $ getPieceFromPosition srcCoord
-        result                <- lift $ validateMove player srcCoord destCoord srcPiece
-        return (srcCoord, destCoord, srcPiece)
-
-    case mMove of
-        Nothing -> do
-            lift $ putStrLn "Movimento inválido."
-            movePiece
-        Just (srcCoord, destCoord, srcPiece) -> do
-            destPiece <- getPieceFromPosition destCoord
-            success <- tryMovePiece srcCoord destCoord
-            if success
-                then handleSuccessMove srcCoord destCoord srcPiece destPiece
-            else do
+        case mMove of
+            Nothing -> do
                 lift $ putStrLn "Movimento inválido."
                 movePiece
+            Just (srcCoord, destCoord, srcPiece) -> do
+                destPiece <- getPieceFromPosition destCoord
+                success <- tryMovePiece srcCoord destCoord
+                if success
+                    then handleSuccessMove srcCoord destCoord srcPiece destPiece
+                else do
+                    lift $ putStrLn "Movimento inválido."
+                    movePiece
 
 promptForMove :: ShogiGame String
 promptForMove = do
