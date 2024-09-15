@@ -29,7 +29,8 @@ executable shogi-game
     Game
   default-language:    Haskell2010
   build-depends:       base >= 4.7 && < 5,
-                       mtl >= 2.3
+                       mtl >= 2.3,
+                       transformers
   ghc-options:         -Wall
                        -Wcompat
                        -Widentities

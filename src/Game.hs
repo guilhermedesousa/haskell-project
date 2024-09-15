@@ -2,6 +2,10 @@ module Game (playShogi, createGame) where
 
 import Data.Maybe (catMaybes)
 import Control.Monad.State
+import Control.Monad (when)
+import Control.Monad.Trans.Maybe
+import Control.Monad.Trans.Class (lift)
+import Control.Monad (liftM2)
 import Utils
 import Board
 import Player
@@ -24,6 +28,7 @@ playShogi = do
     printCapturedPieces
     printBoard
     movePiece
+    
     -- isInCheck <- isKingInCheck curPlayer b
     -- lift $ putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
 
@@ -38,85 +43,68 @@ playShogi = do
 
 movePiece :: ShogiGame ()
 movePiece = do
+    input <- promptForMove
+
+    -- *early stop retirado do claude.ai
+    when (input == "sair") $ do
+        lift $ putStrLn "Encerrando o programa."
+        return ()
+
+    player <- gets currentPlayer
+
+    -- *exemplo de computação que pode falhar retirado do claude.ai
+    mMove <- runMaybeT $ do
+        (srcPos, destPos)     <- MaybeT $ return $ parseInput input
+        (srcCoord, destCoord) <- MaybeT $ return $ liftM2 (,) (parsePosition srcPos) (parsePosition destPos)
+        srcPiece              <- MaybeT $ getPieceFromPosition srcCoord
+        result                <- lift $ validateMove player srcCoord destCoord srcPiece
+        return (srcCoord, destCoord, srcPiece)
+
+    case mMove of
+        Nothing -> do
+            lift $ putStrLn "Movimento inválido."
+            movePiece
+        Just (srcCoord, destCoord, srcPiece) -> do
+            destPiece <- getPieceFromPosition destCoord
+            success <- tryMovePiece srcCoord destCoord
+            if success
+                then handleSuccessMove srcCoord destCoord srcPiece destPiece
+            else do
+                lift $ putStrLn "Movimento inválido."
+                movePiece
+
+promptForMove :: ShogiGame String
+promptForMove = do
     lift $ putStrLn "\nInsira uma posição de origem e destino (ex: 3a 4a), 'repor' ou 'sair' para encerrar:"
-    input <- lift getLine
+    lift getLine
 
-    b         <- gets board
-    player    <- gets currentPlayer
-    capPieces <- gets capturedPieces
+parseInput :: String -> Maybe (String, String)
+parseInput input = case words input of
+    [src, dest] -> Just (src, dest)
+    _           -> Nothing
 
-    if input == "sair"
-        then lift $ putStrLn "Encerrando o programa."
-        -- else if input == "repor"
-        --     then do
-        --         handlePieceReplacement player capturedPieces board
-        else do
-            let positions = words input
-            if length positions /= 2
-                then do
-                    lift $ putStrLn "Formato inválido. Use o formato '3a 4a'."
-                    movePiece 
-                else do
-                    case positions of
-                        [srcPos, destPos] -> do
-                            case parsePosition srcPos of
-                                Nothing -> do
-                                    lift $ putStrLn "Movimento inválido."
-                                    movePiece 
-                                Just (srcRow, srcCol) -> do
-                                    case parsePosition destPos of
-                                        Nothing -> do
-                                            lift $ putStrLn "Movimento inválido."
-                                            movePiece 
-                                        Just (destRow, destCol) -> do
-                                            pieceAtSrc <- getPieceFromPosition (srcRow, srcCol)
-                                            pieceAtDest <- getPieceFromPosition (destRow, destCol)
+validateMove :: Player -> Position -> Position -> Piece -> ShogiGame (Maybe Bool)
+validateMove player srcCoord destCoord srcPiece = do
+    if player /= getPlayer srcPiece
+        then return Nothing
+    else do
+        destPiece <- getPieceFromPosition destCoord
+        case destPiece of
+            Just dp | getPlayer srcPiece == getPlayer dp -> return Nothing
+            _ -> return $ Just True
 
-                                            case pieceAtSrc of
-                                                Nothing -> do
-                                                    lift $ putStrLn $ "Não há peça na posição " ++ srcPos
-                                                    movePiece
-                                                Just srcPiece | player /= getPlayer srcPiece -> do
-                                                    lift $ putStrLn $ "Movimento inválido: É a vez do jogador " ++ show player
-                                                    movePiece 
-                                                Just piece -> do
-                                                    case pieceAtDest of  
-                                                        Just destPiece | getPlayer piece == getPlayer destPiece -> do
-                                                            lift $ putStrLn "Movimento inválido: Não pode capturar uma peça do mesmo time."
-                                                            movePiece
-                                                        _ -> do
-                                                            success <- tryMovePiece (srcRow, srcCol) (destRow, destCol)
-                                                            if success
-                                                                then do
-                                                                    lift $ putStrLn $ "\nPeça movida: " ++ show (getType piece) ++ "\n"
-                                                                    printCapturedPiece pieceAtDest
-                                                                    lift $ putStrLn "--------------------------------------------------"
-                                                                    
-                                                                    -- atualiza a lista de peças capturadas
-                                                                    addCapturedPiece pieceAtDest
-                                                                    
-                                                                    -- atualiza o jogador da vez
-                                                                    modify $ \gs -> gs { currentPlayer = opponent player }
-
-                                                                    playShogi
-
-                                                                    -- isInCheck <- isKingInCheck player
-                                                                    -- if isInCheck
-                                                                    --     then do
-                                                                    --         lift $ putStrLn "Movimento inválido: Não se pode colocar em cheque."
-                                                                    --         movePiece
-                                                                    --     else do
-                                                                    --         -- let updatedCapturedPieces = addCapturedPiece capturedPieces pieceAtDest
-                                                                    --         lift $ putStrLn $ "\nPeça na posição " ++ srcPos ++ ": " ++ show (getType piece) ++ "\n"
-                                                                    --         modify $ \gs -> gs { currentPlayer = opponent player }
-                                                                    --         playShogi
-                                                            else do
-                                                                lift $ putStrLn "Movimento inválido."
-                                                                movePiece
-                                                                    
-                        _ -> do
-                            lift $ putStrLn "Formato inválido. Use o formato '3a 4a'."
-                            movePiece
+handleSuccessMove :: Position -> Position -> Piece -> Maybe Piece -> ShogiGame ()
+handleSuccessMove srcCoord destCoord srcPiece destPiece = do
+    lift $ putStrLn $ "\nPeça movida: " ++ show (getType srcPiece) ++ "\n"
+    
+    printCapturedPiece destPiece
+    lift $ putStrLn "--------------------------------------------------"
+    
+    addCapturedPiece destPiece
+    
+    modify $ \gs -> gs { currentPlayer = opponent (currentPlayer gs) }
+    
+    playShogi
 
 -- handlePieceReplacement :: Player -> CapturedPieces -> Board -> IO ()
 -- handlePieceReplacement player capturedPieces board = do
