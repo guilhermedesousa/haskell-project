@@ -1,5 +1,6 @@
-module Board (createInitialBoard, isPromotionZone, printBoard, Cell, Board) where
+module Board (createInitialBoard, isPromotionZone, printBoard, Cell, Board, GameState(..), ShogiGame) where
 
+import Control.Monad.State
 import Data.List (intercalate)
 import Player
 import Piece hiding (isPromoted)
@@ -7,6 +8,14 @@ import Utils
 
 type Cell = Maybe Piece
 type Board = [[Cell]]
+
+data GameState = GameState {
+    board          :: Board,
+    capturedPieces :: ([Maybe Piece], [Maybe Piece]),
+    currentPlayer  :: Player
+}
+
+type ShogiGame a = StateT GameState IO a
 
 createCell :: Player -> PieceType -> Cell
 createCell player pieceType = Just (Piece pieceType player False)
@@ -97,11 +106,12 @@ printCell Nothing      = "   "
 printCell (Just piece) = " " ++ printPiece piece ++ " "
 
 -- *código para printar as linhas numeradas retirado do chatgpt
-printBoard :: Board -> IO ()
-printBoard board = do
-    putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
-    putStrLn "-----------------------------------"
-    putStrLn (unlines (zipWith showRow board [1..9]))
+printBoard :: ShogiGame ()
+printBoard = do
+    b <- gets board
+    lift $ putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
+    lift $ putStrLn "-----------------------------------"
+    lift $ putStrLn (unlines (zipWith showRow b [1..9]))
     where
         showRow :: [Cell] -> Int -> String
         showRow row n = intercalate "|" (map printCell row) ++ "| " ++ show n

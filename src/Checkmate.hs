@@ -1,61 +1,80 @@
-module Checkmate (isKingInCheck, isCheckmate, opponent) where
+-- module Checkmate (isKingInCheck, isCheckmate, opponent) where
+module Checkmate where
 
+import Control.Monad.State
+import Control.Monad (filterM)
 import Piece hiding (isPromoted)
+import Data.Maybe (catMaybes, isJust)
 import Board
 import Utils
 import Player
 import Moviments
 
--- Verifica se o rei está em cheque
-isKingInCheck :: Player -> Board -> Bool
-isKingInCheck player board =
-    let kingPos = findKingCoordinate board player
-    in any (\pos ->
-        case getPieceFromPosition pos board of
-            Just (Piece _ piecePlayer _) ->
-                piecePlayer == opponent player && isValidMove pos kingPos board
-            _ -> False
-    ) allPositions
+-- -- Verifica se o rei está em cheque
+-- isKingInCheck :: Player -> Board -> ShogiGame Bool
+-- isKingInCheck player b = do
+--     kingPos <- findKingCoordinate b player
+--     let opponentPlayer = opponent player
 
-isCheckmate :: Player -> Board -> Bool
-isCheckmate player board =
-    isKingInCheck player board && canNotScape player board
+--     or <$> mapM (\pos -> do
+--         piece <- getPieceFromPosition pos
+--         case piece of
+--             Just (Piece _ piecePlayer _) ->
+--                 if piecePlayer == opponentPlayer
+--                 then isValidMove pos kingPos
+--                 else return False
+--             _ -> return False
+--         ) allPositions
 
-canNotScape :: Player -> Board -> Bool
-canNotScape player board =
-    all (isKingStillInCheck player) possibleBoards
-  where
-    -- Todas as posições das peças do jogador
-    playerPositions = playerPiecePositions player board
+-- isCheckmate :: Player -> Board -> ShogiGame Bool
+-- isCheckmate player b = do
+--     isInCheck <- isKingInCheck player b
+--     canScape <- canNotScape player
+--     return $ isInCheck && canScape
 
-    -- Gera todos os tabuleiros possíveis após mover uma peça
-    possibleBoards = [newBoard | fromPos <- playerPositions,
-                                 toPos <- allPositions,
-                                 isValidPosition toPos,
-                                 Just newBoard <- [tryMovePiece fromPos toPos board]]
+-- canNotScape :: Player -> ShogiGame Bool
+-- canNotScape player = do
+--     b <- gets board
+--     playerPositions <- playerPiecePositions player b
+--     possibleBoards <- concat <$> mapM (generateBoards b) playerPositions
+--     allM (isKingInCheck player) possibleBoards
 
--- Verifica se o rei ainda está em xeque no novo tabuleiro
-isKingStillInCheck :: Player -> Board -> Bool
-isKingStillInCheck = isKingInCheck
+-- generateBoards :: Board -> Position -> ShogiGame [Board]
+-- generateBoards b fromPos = do
+--     validBoards <- mapM (tryMovePieceM fromPos b) allPositions
+--     return $ catMaybes validBoards
 
--- Função auxiliar que retorna todas as posições das peças de um jogador no tabuleiro
-playerPiecePositions :: Player -> Board -> [Position]
-playerPiecePositions player board =
-    [(r, c) | r <- [0..8], c <- [0..8],
-              let pos = (r, c),
-              Just piece <- [getPieceFromPosition pos board],
-              getPlayer piece == player]
+-- tryMovePieceM :: Position -> Board -> Position -> ShogiGame (Maybe Board)
+-- tryMovePieceM fromPos b toPos = do
+--     isValid <- isValidPosition toPos
+--     if isValid
+--         then tryMovePiece fromPos toPos
+--     else return Nothing
 
--- Função para encontrar a posição do rei do jogador
-findKingCoordinate :: Board -> Player -> Position
-findKingCoordinate board player =
-    head [pos | pos <- allPositions, isKing pos]
-  where
-    isKing pos = case getPieceFromPosition pos board of
-        Just (Piece Rei piecePlayer _) -> piecePlayer == player
-        _ -> False
+-- -- Função auxiliar que retorna todas as posições das peças de um jogador no tabuleiro
+-- playerPiecePositions :: Player -> Board -> ShogiGame [Position]
+-- playerPiecePositions player board = do
+--     let positions = [(r, c) | r <- [0..8], c <- [0..8]]
+--     filteredPositions <- filterM (\pos -> do
+--         piece <- getPieceFromPosition pos
+--         case piece of
+--             Just p -> return (getPlayer p == player)
+--             Nothing -> return False
+--         ) positions
+--     return filteredPositions
 
--- Função que retorna o jogador oponente
-opponent :: Player -> Player
-opponent A = B
-opponent B = A
+-- -- Função para encontrar a posição do rei do jogador
+-- findKingCoordinate :: Board -> Player -> ShogiGame Position
+-- findKingCoordinate board player = do
+--     let positions = allPositions
+--     kingPos <- filterM isKing positions
+--     return $ head kingPos
+--   where
+--     isKing pos = do
+--         piece <- getPieceFromPosition pos
+--         return $ case piece of
+--             Just (Piece Rei piecePlayer _) -> piecePlayer == player
+--             _ -> False
+
+-- allM :: Monad m => (a -> m Bool) -> [a] -> m Bool
+-- allM p = foldr (\x acc -> p x >>= \result -> if not result then return False else acc) (return True)

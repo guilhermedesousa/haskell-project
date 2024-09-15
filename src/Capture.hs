@@ -1,5 +1,6 @@
-module Capture (CapturedPieces, addCapturedPiece, removeCapturedPiece, printCapturedPieces, parsePieceChoice, validReplacement) where
+module Capture (CapturedPieces, addCapturedPiece, removeCapturedPiece, printCapturedPieces, printCapturedPiece, parsePieceChoice, validReplacement) where
 
+import Control.Monad.State
 import Data.Maybe (catMaybes, isJust)
 import Data.List (intercalate)
 import Data.Char (digitToInt)
@@ -10,19 +11,37 @@ import Board
 
 type CapturedPieces = ([Maybe Piece], [Maybe Piece])
 
-addCapturedPiece :: CapturedPieces -> Maybe Piece -> CapturedPieces
-addCapturedPiece capturedPieces newPiece = case newPiece of
-    Nothing    -> capturedPieces
-    Just piece -> do
-        let player    = getPlayer piece
-        let pieceType = getType piece
-        case player of
-            A -> do
-                let newPieceB = Just (Piece pieceType B False)
-                (fst capturedPieces, addToPlayerList (snd capturedPieces) newPieceB)
-            B -> do
-                let newPieceA = Just (Piece pieceType A False)
-                (addToPlayerList (fst capturedPieces) newPieceA, snd capturedPieces)
+-- addCapturedPiece :: CapturedPieces -> Maybe Piece -> CapturedPieces
+-- addCapturedPiece capturedPieces newPiece = case newPiece of
+--     Nothing    -> capturedPieces
+--     Just piece -> do
+--         let player    = getPlayer piece
+--         let pieceType = getType piece
+--         case player of
+--             A -> do
+--                 let newPieceB = Just (Piece pieceType B False)
+--                 (fst capturedPieces, addToPlayerList (snd capturedPieces) newPieceB)
+--             B -> do
+--                 let newPieceA = Just (Piece pieceType A False)
+--                 (addToPlayerList (fst capturedPieces) newPieceA, snd capturedPieces)
+
+addCapturedPiece :: Maybe Piece -> ShogiGame ()
+addCapturedPiece mPiece = do
+    capPieces <- gets capturedPieces
+    case mPiece of
+        Nothing    -> return ()
+        Just piece -> do
+            let player    = getPlayer piece
+            let pieceType = getType piece
+            case player of
+                A -> do
+                    let newPieceB = Just (Piece pieceType B False)
+                    let updatedCapPieces = (fst capPieces, addToPlayerList (snd capPieces) newPieceB)
+                    modify $ \gs -> gs { capturedPieces = updatedCapPieces }
+                B -> do
+                    let newPieceA = Just (Piece pieceType A False)
+                    let updatedCapPieces = (addToPlayerList (fst capPieces) newPieceA, snd capPieces)
+                    modify $ \gs -> gs { capturedPieces = updatedCapPieces }
 
 removeCapturedPiece :: CapturedPieces -> Int -> Piece -> CapturedPieces
 removeCapturedPiece capturedPieces i piece = case (getPlayer piece) of
@@ -42,8 +61,21 @@ indexCapturedPieces pieces = zipWith showIndexedPiece pieces [1..]
         showIndexedPiece piece n = show n ++ ": " ++ pieceToString piece
 
 -- *código para printar as peças capturadas retirado do chatgpt (catMaybes e indexCapturedPieces)
-printCapturedPieces :: [Maybe Piece] -> IO ()
-printCapturedPieces pieces = putStrLn $ intercalate ", " (indexCapturedPieces (catMaybes pieces))
+printCapturedPieces :: ShogiGame ()
+printCapturedPieces = do
+    curPlayer <- gets currentPlayer
+    capPieces <- gets capturedPieces
+
+    let pieces = if curPlayer == A then fst capPieces else snd capPieces
+    
+    lift $ putStrLn $ "Peças capturadas pelo jogador " ++ show curPlayer ++ ": "
+    lift $ putStrLn $ intercalate ", " (indexCapturedPieces (catMaybes pieces))
+
+printCapturedPiece :: Maybe Piece -> ShogiGame ()
+printCapturedPiece mPiece = do
+    case mPiece of
+        Nothing    -> lift $ putStrLn "Nenhuma peça capturada.\n"
+        Just piece -> lift $ putStrLn $ "Peça capturada: " ++ show (getType piece) ++ "\n"
 
 parsePieceChoice :: Int -> String -> Maybe Int
 parsePieceChoice countCaptured playerChoice

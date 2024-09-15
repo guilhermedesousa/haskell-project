@@ -1,4 +1,5 @@
+import Control.Monad.State
 import Game
 
 main :: IO ()
-main = start
+main = evalStateT playShogi createGame
