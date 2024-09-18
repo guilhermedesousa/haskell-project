@@ -15,9 +15,8 @@ createGame = GameState createInitialBoard ([], []) B -- jogador B começa
 
 playShogi :: ShogiGame ()
 playShogi = do
-    curPlayer <- gets currentPlayer
-    shogiBoard         <- gets board
-    -- capPieces <- gets capturedPieces
+    curPlayer  <- gets currentPlayer
+    shogiBoard <- gets board
     
     lift $ putStrLn $ "\n" ++ show curPlayer ++ " está jogando...\n"
     
