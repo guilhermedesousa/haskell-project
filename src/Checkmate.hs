@@ -15,9 +15,6 @@ isKingInCheck :: Player -> Board -> ShogiGame Bool
 isKingInCheck player b = do
     kingPos <- findKingCoordinate2 b player
     let opponentPlayer = opponent player
-    -- Imprime o tabuleiro e a coordenada do rei
-    -- liftIO $ putStrLn $ "Tabuleiro:\n" ++ show b
-    -- liftIO $ putStrLn $ "Coordenada do Rei: " ++ show kingPos
 
     or <$> mapM (\pos -> do
         piece <- getPieceFromPosition pos
@@ -31,8 +28,6 @@ isKingInCheck player b = do
                         Just updatedBoard -> do
                             return True  -- Movimento válido
                         Nothing -> do
-                            -- liftIO $ putStrLn $ "Movimento para verificar check: " ++ show pos
-                            -- liftIO $ putStrLn $ "Peça movida: " ++ show (Piece pieceType piecePlayer isPromoted)
                             return False -- Movimento inválido
                         Nothing -> return False
                 else return False
@@ -43,8 +38,7 @@ isCheckmate :: Player -> Board -> ShogiGame Bool
 isCheckmate player b = do
     isInCheck <- isKingInCheck player b
     cantScape <- canNotScape player
-    -- Imprime os resultados de isInCheck e cantScape
-    -- liftIO $ putStrLn $ "isInCheck: " ++ show isInCheck ++ ", cantScape: " ++ show cantScape
+
     return $ isInCheck && cantScape
 
 canNotScape :: Player -> ShogiGame Bool
@@ -52,16 +46,11 @@ canNotScape player = do
     b <- gets board
     playerPositions <- playerPiecePositions player b
     possibleBoards <- concat <$> mapM (generateBoards b) playerPositions
-    
+
     -- Verifica se o rei está em cheque em cada tabuleiro possível e imprime o resultado
     checkResults <- mapM (\board -> do
-        inCheck <- isKingInCheck player board
-        -- liftIO $ putStrLn $ "O rei de " ++ show player ++ " está em cheque no tabuleiro:\n" ++ show board ++ "\nResultado: " ++ show inCheck
-        return inCheck
+        isKingInCheck player board
       ) possibleBoards
-
-    -- Imprime o resultado final
-    liftIO $ putStrLn $ "Todos os tabuleiros possíveis deixam o rei de " ++ show player ++ " em cheque? " ++ show (and checkResults)
 
     return (and checkResults)
 
@@ -73,7 +62,7 @@ generateBoards b fromPos = do
 tryMovePieceM :: Position -> Board -> Position -> StateT GameState IO (Maybe Board)
 tryMovePieceM fromPos b toPos = do
     -- Checa se a posição destino é válida
-    isValid <- isValidPosition toPos  
+    isValid <- isValidPosition toPos
     if isValid
         then do
             resultBoard <- tryMovePiece2 b fromPos toPos

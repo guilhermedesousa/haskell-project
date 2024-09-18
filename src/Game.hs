@@ -24,21 +24,6 @@ playShogi = do
     printCapturedPieces
     printBoard
 
-    -- kingPos <- findKingCoordinate shogiBoard curPlayer
-    -- lift $ putStrLn $ "O rei de " ++ show curPlayer ++ " está na posição: " ++ show kingPos
-
-    -- playerPositions <- playerPiecePositions curPlayer shogiBoard
-    -- lift $ putStrLn $ "Posições das peças de " ++ show curPlayer ++ ": " ++ show playerPositions
-    
-    isInCheck <- isKingInCheck curPlayer shogiBoard
-    
-    lift $ putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
-
-    -- maybeEscapeMove <- findEscapeMove curPlayer shogiBoard
-    -- case maybeEscapeMove of
-    --     Just (fromPos, toPos) -> lift $ putStrLn $ "Movimento de escape encontrado: " ++ show fromPos ++ " para " ++ show toPos
-    --     Nothing -> lift $ putStrLn "Nenhum movimento de escape encontrado."
-
     isInCheckMate <- isCheckmate curPlayer shogiBoard
 
     if isInCheckMate

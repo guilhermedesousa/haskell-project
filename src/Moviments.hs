@@ -366,7 +366,6 @@ tryGoldMove (srcRow, srcCol) (desRow, desCol) = do
                 adjustedDiagonalMove = case player of
                                         A -> isDiagonalMove && (deltaX == -1 && abs deltaY == 1)
                                         B -> isDiagonalMove && (deltaX == 1 && abs deltaY == 1)
-            -- liftIO $ putStrLn $ "Player: " ++ show player ++ ", isKingMove: " ++ show isKingMove ++ ", isDiagonalMove: " ++ show isDiagonalMove ++ ", adjustedDiagonalMove: " ++ show adjustedDiagonalMove
 
             return $ isKingMove && not adjustedDiagonalMove
         
@@ -383,16 +382,13 @@ trySilverMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
                 else do
                     let deltaX = desRow - srcRow
                         deltaY = desCol - srcCol
-                        -- Verificar se o movimento é um movimento na diagonal
                         isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
-                        -- Verificar se o movimento é uma captura
                         isCapture = abs deltaY == 0
-                        -- Verificar se o movimento é para frente com base no jogador
                         isForwardMove = case player of
                                           A -> deltaX == 1
                                           B -> deltaX == -1
                     return $ isDiagonalMove || (isForwardMove && isCapture)
-        Nothing -> return False  -- Se não houver peça na posição de destino
+        Nothing -> return False
 
 dropPiece :: Piece -> Position -> ShogiGame ()
 dropPiece pieceToReplace toPos = placePiece toPos (Just pieceToReplace)
