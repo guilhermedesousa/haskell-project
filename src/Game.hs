@@ -16,26 +16,37 @@ createGame = GameState createInitialBoard ([], []) B -- jogador B começa
 playShogi :: ShogiGame ()
 playShogi = do
     curPlayer <- gets currentPlayer
-    -- b         <- gets board
+    shogiBoard         <- gets board
     -- capPieces <- gets capturedPieces
     
     lift $ putStrLn $ "\n" ++ show curPlayer ++ " está jogando...\n"
     
     printCapturedPieces
     printBoard
-    movePiece
 
-    -- isInCheck <- isKingInCheck curPlayer b
-    -- lift $ putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
+    -- kingPos <- findKingCoordinate shogiBoard curPlayer
+    -- lift $ putStrLn $ "O rei de " ++ show curPlayer ++ " está na posição: " ++ show kingPos
 
-    -- isInCheckMate <- isCheckmate curPlayer b
+    -- playerPositions <- playerPiecePositions curPlayer shogiBoard
+    -- lift $ putStrLn $ "Posições das peças de " ++ show curPlayer ++ ": " ++ show playerPositions
+    
+    isInCheck <- isKingInCheck curPlayer shogiBoard
+    
+    lift $ putStrLn $ "O rei de " ++ show curPlayer ++ (if isInCheck then " está em cheque!" else " não está em cheque.")
 
-    -- if isInCheckMate
-    --     then do
-    --         let winner = opponent curPlayer
-    --         lift $ putStrLn $ "O jogador " ++ show winner ++ " venceu o jogo!"
-    --     else do
-    --         movePiece
+    -- maybeEscapeMove <- findEscapeMove curPlayer shogiBoard
+    -- case maybeEscapeMove of
+    --     Just (fromPos, toPos) -> lift $ putStrLn $ "Movimento de escape encontrado: " ++ show fromPos ++ " para " ++ show toPos
+    --     Nothing -> lift $ putStrLn "Nenhum movimento de escape encontrado."
+
+    isInCheckMate <- isCheckmate curPlayer shogiBoard
+
+    if isInCheckMate
+        then do
+            let winner = opponent curPlayer
+            lift $ putStrLn $ "O jogador " ++ show winner ++ " venceu o jogo!"
+        else do
+            movePiece
 
 movePiece :: ShogiGame ()
 movePiece = do
