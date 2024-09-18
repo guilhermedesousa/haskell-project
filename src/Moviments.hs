@@ -1,191 +1,397 @@
 {-# LANGUAGE TupleSections #-}
 module Moviments where
 
+import Control.Monad.State
 import Piece hiding (isPromoted)
 import Board
 import Utils
 import Player
 
-tryMovePiece :: Position -> Position -> Board -> Maybe Board
-tryMovePiece fromPos toPos board =
-    case maybePiece of
+tryMovePiece2 :: Board -> Position -> Position -> ShogiGame (Maybe Board)
+tryMovePiece2 tabuleiro fromPos toPos = do
+    b <- gets board
+    pieceAtSrc  <- getPieceFromPosition2 tabuleiro fromPos
+    pieceAtDest <- getPieceFromPosition2 tabuleiro toPos
+
+    case pieceAtSrc of
+        Nothing -> return Nothing
         Just (Piece pieceType player isPromoted) ->
-            -- Verifica se a posição de destino é válida e não está ocupada por uma peça aliada
-            if not (isValidPosition toPos) then Nothing
-            else case pieceAtDest of
-                Just (Piece _ destPlayer _) | destPlayer == player -> Nothing
-                _ -> if pieceType == Lanca && tryLanceMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Lanca player True else Piece Lanca player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == Cavalo && tryHorseMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Cavalo player True else Piece Cavalo player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == General_Prata && trySilverMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece General_Prata player True else Piece General_Prata player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == General_Ouro && tryGoldMove fromPos toPos player board then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece General_Ouro player True else Piece General_Ouro player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == Rei && tryKingMove fromPos toPos player board then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Rei player True else Piece Rei player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == Bispo && tryBishopMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Bispo player True else Piece Bispo player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == Torre && tryTowerMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Torre player True else Piece Torre player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else if pieceType == Peao && tryPawnMove fromPos toPos player board isPromoted then do
-                        let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Peao player True else Piece Peao player isPromoted
-                        Just (placePiece toPos (Just newPiece) newBoard)
-                     else
-                        Nothing
-        Nothing -> Nothing
-    where
-        maybePiece = getPieceFromPosition fromPos board
-        pieceAtDest = getPieceFromPosition toPos board
-        newBoard = placePiece fromPos Nothing board
+            case pieceAtDest of
+                Just (Piece _ destPlayer _) | destPlayer == player -> return Nothing
+                _ ->
+                    case pieceType of
+                        Lanca -> do
+                            succLanceMove <- tryLanceMoveC tabuleiro fromPos toPos isPromoted
+                            if succLanceMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        Cavalo -> do
+                            succHorseMove <- tryHorseMove fromPos toPos isPromoted
+                            if succHorseMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        General_Prata -> do
+                            succSilverMove <- trySilverMove fromPos toPos isPromoted
+                            if succSilverMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        General_Ouro -> do
+                            succGoldMove <- tryGoldMove fromPos toPos
+                            if succGoldMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        Rei -> do
+                            succKingMove <- tryKingMove fromPos toPos
+                            if succKingMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        Bispo -> do
+                            succBishopMove <- tryBishopMoveC tabuleiro fromPos toPos isPromoted
+                            if succBishopMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        Torre -> do
+                            succTowerMove <- tryTowerMoveC tabuleiro fromPos toPos isPromoted
+                            if succTowerMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
+                        Peao -> do
+                            succPawnMove <- tryPawnMove fromPos toPos isPromoted
+                            if succPawnMove
+                                then return (returnBoard fromPos toPos b)
+                                else return Nothing
 
-isValidMove :: Position -> Position -> Board -> Bool
-isValidMove fromPos toPos board =
-    case getPieceFromPosition fromPos board of
-        Just _ -> case tryMovePiece fromPos toPos board of
-            Just _ -> True
-            Nothing -> False
-        Nothing -> False
+-- Função para atualizar o tabuleiro movendo uma peça
+returnBoard :: Position -> Position -> Board -> Maybe Board
+returnBoard fromPos toPos board = do
+    piece <- board !! fst fromPos !! snd fromPos
+    let boardWithoutPiece = returnBoardPositions board fromPos Nothing
+    return $ returnBoardPositions boardWithoutPiece toPos (Just piece)
 
-placePiece :: Position -> Maybe Piece -> Board -> Board
-placePiece (row, col) maybePiece board =
-    let -- Atualiza a linha no índice y
-        updatedRow = take col (board !! row) ++ [maybePiece] ++ drop (col + 1) (board !! row)
-        -- Atualiza o tabuleiro substituindo a linha y com a linha atualizada
-        newBoard = take row board ++ [updatedRow] ++ drop (row + 1) board
-    in newBoard
+-- Função auxiliar para atualizar o tabuleiro
+returnBoardPositions :: Board -> Position -> Maybe Piece -> Board
+returnBoardPositions board (row, col) mPiece =
+    take row board ++
+    [take col (board !! row) ++ [mPiece] ++ drop (col + 1) (board !! row)] ++
+    drop (row + 1) board
 
--- Função para obter a peça em uma determinada posição do tabuleiro
-getPieceFromPosition :: Position -> Board -> Cell
-getPieceFromPosition (row, col) board =
-    -- Verifica se a posição está dentro dos limites do tabuleiro
-    if row >= 0 && row < length board
-       && col >= 0 && col < length (board !! row)
-    then (board !! row) !! col  -- Acessa a célula na posição (row, col)
-    else Nothing  -- Se a posição estiver fora dos limites
+tryMovePiece :: Position -> Position -> ShogiGame Bool
+tryMovePiece fromPos toPos = do
+    pieceAtSrc  <- getPieceFromPosition fromPos
+    pieceAtDest <- getPieceFromPosition toPos
 
-tryPawnMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-tryPawnMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
-    if isPromoted then tryGoldMove (srcRow, srcCol) (desRow, desCol) player board else
-        let deltaX = desRow - srcRow
-            deltaY = desCol - srcCol
-            pieceAtDest = getPieceFromPosition (desRow, desCol) board
-            isForwardMove = abs deltaX == 1
-            isCapture = abs deltaY == 0
-            validMove step = isForwardMove && deltaX == step && isCapture || isCapture && deltaX == step && case pieceAtDest of
-                Just _  -> True
-                Nothing -> False
-        in case player of
-            A -> validMove 1
-            B -> validMove (-1)
+    case pieceAtSrc of
+        Nothing -> return False
+        Just (Piece pieceType player isPromoted) ->
+            case pieceAtDest of
+                Just (Piece _ destPlayer _) | destPlayer == player -> return False
+                _ ->
+                    case pieceType of
+                        Lanca -> do
+                            succLanceMove <- tryLanceMove fromPos toPos isPromoted
+                            if succLanceMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Lanca player True else Piece Lanca player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        Cavalo -> do
+                            succHorseMove <- tryHorseMove fromPos toPos isPromoted
+                            if succHorseMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Cavalo player True else Piece Cavalo player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        General_Prata -> do
+                            succSilverMove <- trySilverMove fromPos toPos isPromoted
+                            if succSilverMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece General_Prata player True else Piece General_Prata player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        General_Ouro -> do
+                            succGoldMove <- tryGoldMove fromPos toPos
+                            if succGoldMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece General_Ouro player True else Piece General_Ouro player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        Rei -> do
+                            succKingMove <- tryKingMove fromPos toPos
+                            if succKingMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Rei player True else Piece Rei player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        Bispo -> do
+                            succBishopMove <- tryBishopMove fromPos toPos isPromoted
+                            if succBishopMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Bispo player True else Piece Bispo player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        Torre -> do
+                            succTowerMove <- tryTowerMove fromPos toPos isPromoted
+                            if succTowerMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Torre player True else Piece Torre player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
+                        Peao -> do
+                            succPawnMove <- tryPawnMove fromPos toPos isPromoted
+                            if succPawnMove
+                                then do
+                                    let newPiece = if not isPromoted && isPromotionZone player toPos then Piece Peao player True else Piece Peao player isPromoted
+                                    updateBoard fromPos toPos newPiece
+                            else
+                                return False
 
-tryLanceMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-tryLanceMove (srcRow, srcCol) (desRow, desCol) player board isPromoted
-    | isPromoted = tryGoldMove (srcRow, srcCol) (desRow, desCol) player board
-    | srcCol /= desCol = False  -- Movimento não é horizontal
-    | otherwise = validMove && pathClear
-  where
-    positions = [(row, srcCol) | row <- [min srcRow desRow + 1 .. max srcRow desRow - 1]]
-    pathClear = all (\pos -> case getPieceFromPosition pos board of
-                              Just _  -> False
-                              Nothing -> True) positions
-    validMove = case player of
-        A -> desRow > srcRow
-        B  -> desRow < srcRow
+placePiece :: Position -> Maybe Piece -> ShogiGame ()
+placePiece (row, col) mPiece = do
+    b <- gets board
+    let updatedBoard = take row b ++ [take col (b !! row) ++ [mPiece] ++ drop (col + 1) (b !! row)] ++ drop (row + 1) b
+    modify $ \gs -> gs { board = updatedBoard }
 
-tryKingMove :: Position -> Position -> Player -> Board -> Bool
-tryKingMove (srcRow, srcCol) (desRow, desCol) _ _ =
+updateBoard :: Position -> Position -> Piece -> ShogiGame Bool
+updateBoard fromPos toPos mPiece = do
+    placePiece fromPos Nothing
+    placePiece toPos (Just mPiece)
+    return True
+
+getPieceFromPosition :: Position -> ShogiGame Cell
+getPieceFromPosition (row, col) = do
+    b <- gets board
+    isValid <- isValidPosition (row, col)
+    if isValid
+        then return $ (b !! row) !! col
+        else return Nothing
+
+getPieceFromPosition2 :: Board -> Position -> ShogiGame (Maybe Piece)
+getPieceFromPosition2 board (row, col) = do
+    isValid <- isValidPosition (row, col)
+    if isValid
+        then return $ (board !! row) !! col
+        else return Nothing
+
+tryPawnMove :: Position -> Position -> Bool -> ShogiGame Bool
+tryPawnMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    b           <- gets board
+    player      <- getPieceFromPosition (srcRow, srcCol)
+    pieceAtDest <- getPieceFromPosition (desRow, desCol)
+
+    case player of
+        Just (Piece _ playerPeca _) -> do
+            if isPromoted
+                then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+                else do
+                    let deltaX = desRow - srcRow
+                        deltaY = desCol - srcCol
+                        isForwardMove = abs deltaX == 1
+                        isCapture = abs deltaY == 0
+
+                        validMove step = isForwardMove && deltaX == step && isCapture || isCapture && deltaX == step && case pieceAtDest of
+                            Just _  -> True
+                            Nothing -> False
+                    return $ case playerPeca of
+                        A -> validMove 1
+                        B -> validMove (-1)
+        Nothing -> return False  -- Se não houver peça na posição de origem
+
+tryLanceMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryLanceMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
+
+    if isPromoted
+        then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+    else if srcCol /= desCol
+        then return False
+    else do
+        case pieceAtDest of
+            Just (Piece _ player _) -> do
+                let positions = [(row, srcCol) | row <- [min srcRow desRow + 1 .. max srcRow desRow - 1]]
+                pieces <- mapM (getPieceFromPosition2 board) positions
+                let pathClear = all (== Nothing) pieces
+                let validMove = if player == A then desRow > srcRow else desRow < srcRow
+
+                return $ validMove && pathClear
+            Nothing -> return False
+
+tryLanceMove :: Position -> Position -> Bool -> ShogiGame Bool
+tryLanceMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
+
+    if isPromoted
+        then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+    else if srcCol /= desCol
+        then return False
+    else do
+        case pieceAtDest of
+            Just (Piece _ player _) -> do
+                let positions = [(row, srcCol) | row <- [min srcRow desRow + 1 .. max srcRow desRow - 1]]
+                pieces <- mapM getPieceFromPosition positions
+                let pathClear = all (== Nothing) pieces
+                let validMove = if player == A then desRow > srcRow else desRow < srcRow
+
+                return $ validMove && pathClear
+            Nothing -> return False
+
+tryKingMove :: Position -> Position -> ShogiGame Bool
+tryKingMove (srcRow, srcCol) (desRow, desCol) = do
     let deltaX = abs (desRow - srcRow)
         deltaY = abs (desCol - srcCol)
-    in deltaX <= 1 && deltaY <= 1
+    return $ deltaX <= 1 && deltaY <= 1
 
--- Função para verificar se o movimento de um bispo é válido
-tryBishopMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-tryBishopMove (srcRow, srcCol) (desRow, desCol) _ board isPromoted =
+tryBishopMove :: Position -> Position -> Bool -> ShogiGame Bool
+tryBishopMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
     let deltaX = abs (desRow - srcRow)
         deltaY = abs (desCol - srcCol)
+        -- Valida se pode ir pra frente ou para os lados caso seja promovida
+        validHorVer = (deltaX == 1 && deltaY == 0 || deltaX == 0 && deltaY == 1)
         validMove = (deltaX == deltaY) || (isPromoted && validHorVer)
+        range start end = if start < end
+                          then [start + 1 .. end - 1]
+                          else [start - 1, start - 2 .. end + 1]
+
         -- Calcular as posições intermediárias
         positions = if validMove
                     then zip (range srcRow desRow) (range srcCol desCol)
                     else []
-        noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
+    pieces <- mapM getPieceFromPosition positions
+    let noObstructions = all (== Nothing) pieces
+
+    return $ validMove && noObstructions
+
+tryBishopMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryBishopMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    let deltaX = abs (desRow - srcRow)
+        deltaY = abs (desCol - srcCol)
         -- Valida se pode ir pra frente ou para os lados caso seja promovida
-        validHorVer = (deltaX == 1 || deltaY == 1)
-    in validMove && noObstructions
-  where
-    -- Função auxiliar para gerar uma lista de inteiros entre dois valores
-    range start end = if start < end
+        validHorVer = (deltaX == 1 && deltaY == 0 || deltaX == 0 && deltaY == 1)
+        validMove = (deltaX == deltaY) || (isPromoted && validHorVer)
+        range start end = if start < end
+                          then [start + 1 .. end - 1]
+                          else [start - 1, start - 2 .. end + 1]
+
+        -- Calcular as posições intermediárias
+        positions = if validMove
+                    then zip (range srcRow desRow) (range srcCol desCol)
+                    else []
+    
+    pieces <- mapM (getPieceFromPosition2 board) positions
+    let noObstructions = all (== Nothing) pieces
+
+    return $ validMove && noObstructions
+
+tryTowerMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryTowerMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    let deltaX = desRow - srcRow
+        deltaY = desCol - srcCol
+
+        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
+        validMove = (srcRow == desRow || srcCol == desCol) || (isPromoted && isDiagonalMove)
+
+        -- Função auxiliar para calcular as posições intermediárias para movimentos horizontais ou verticais
+        range start end = if start < end
                       then [start + 1 .. end - 1]
                       else [start - 1, start - 2 .. end + 1]
 
-tryTowerMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-tryTowerMove (srcRow, srcCol) (desRow, desCol) _ board isPromoted =
-    let -- Verifica se o movimento é horizontal ou vertical
-        validMove = (srcRow == desRow || srcCol == desCol) || (isPromoted && isDiagonalMove)
-        -- Função auxiliar para calcular as posições intermediárias para movimentos horizontais ou verticais
         positions = if validMove
                     then if srcRow == desRow
                          then map (srcRow,) (range srcCol desCol)
                          else map (, srcCol) (range srcRow desRow)
                     else []
-        noObstructions = all (\(x, y) -> getPieceFromPosition (x, y) board == Nothing) positions
-        -- Verifica se o movimento é válido na diagonal caso seja uma peça promovida
-        deltaX = desRow - srcRow
+        
+    pieces <- mapM (getPieceFromPosition2 board) positions
+    let noObstructions = all (== Nothing) pieces
+        
+    return $ validMove && noObstructions
+
+tryTowerMove :: Position -> Position -> Bool -> ShogiGame Bool
+tryTowerMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    let deltaX = desRow - srcRow
         deltaY = desCol - srcCol
+
         isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
-    in validMove && noObstructions
-  where
-    -- Função auxiliar para gerar uma lista de inteiros entre dois valores
-    range start end = if start < end
+        validMove = (srcRow == desRow || srcCol == desCol) || (isPromoted && isDiagonalMove)
+
+        -- Função auxiliar para calcular as posições intermediárias para movimentos horizontais ou verticais
+        range start end = if start < end
                       then [start + 1 .. end - 1]
                       else [start - 1, start - 2 .. end + 1]
 
--- Função para verificar se o movimento de um cavalo é válido
-tryHorseMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-tryHorseMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
-    if isPromoted then tryGoldMove (srcRow, srcCol) (desRow, desCol) player board else
-        let deltaX = desRow - srcRow
-            deltaY = abs (desCol - srcCol)
-            adjustedDeltaX = case player of
-                            A -> 2
-                            B -> -2
-        in (deltaX == adjustedDeltaX && deltaY == 1)
+        positions = if validMove
+                    then if srcRow == desRow
+                         then map (srcRow,) (range srcCol desCol)
+                         else map (, srcCol) (range srcRow desRow)
+                    else []
+        
+    pieces <- mapM getPieceFromPosition positions
+    let noObstructions = all (== Nothing) pieces
+        
+    return $ validMove && noObstructions
 
-tryGoldMove :: Position -> Position -> Player -> Board -> Bool
-tryGoldMove (srcRow, srcCol) (desRow, desCol) player _ =
-    let deltaX = desRow - srcRow
-        deltaY = desCol - srcCol
-        -- Verificar se o movimento é válido para o Rei
-        isKingMove = deltaX <= 1 && deltaY <= 1 && deltaX >= -1 && deltaY >= -1
-        -- Verificar se o movimento é um movimento de Cavalo com base no jogador
-        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
-        -- Ajustar movimento do cavalo baseado no jogador
-        adjustedDiagonalMove = case player of
-                             A -> isDiagonalMove && (deltaX == -1 && abs deltaY == 1)
-                             B -> isDiagonalMove && (deltaX == 1 && abs deltaY == 1)
-    in isKingMove && not adjustedDiagonalMove
+tryHorseMove :: Position -> Position -> Bool -> ShogiGame Bool
+tryHorseMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
 
-trySilverMove :: Position -> Position -> Player -> Board -> Bool -> Bool
-trySilverMove (srcRow, srcCol) (desRow, desCol) player board isPromoted =
-    if isPromoted then tryGoldMove (srcRow, srcCol) (desRow, desCol) player board else
-        let deltaX = desRow - srcRow
-            deltaY = desCol - srcCol
-            -- Verificar se o movimento é um movimento na diagonal
-            isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
-            -- Ajustar movimento do cavalo baseado no jogador
-            isCapture = abs deltaY == 0
-            isForwardMove = case player of
-                                A -> deltaX == 1
-                                B -> deltaX == -1
-        in isDiagonalMove || (isForwardMove && isCapture)
+    if isPromoted
+        then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+    else do
+        case pieceAtDest of
+            Just (Piece _ player _) -> do
+                let deltaX = desRow - srcRow
+                    deltaY = abs (desCol - srcCol)
+                    adjustedDeltaX = case player of
+                                        A -> 2
+                                        B -> -2
+                return $ (deltaX == adjustedDeltaX && deltaY == 1)
+            Nothing -> return False  -- Se não houver peça na posição de origem
 
-dropPiece :: Piece -> Position -> Board -> Maybe Board
-dropPiece pieceToReplace toPos board = Just (placePiece toPos (Just pieceToReplace) board)
+tryGoldMove :: Position -> Position -> ShogiGame Bool
+tryGoldMove (srcRow, srcCol) (desRow, desCol) = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
+    
+    case pieceAtDest of
+        Just (Piece _ player _) -> do
+            let deltaX = desRow - srcRow
+                deltaY = desCol - srcCol
+                isKingMove = deltaX <= 1 && deltaY <= 1 && deltaX >= -1 && deltaY >= -1
+                isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
+                adjustedDiagonalMove = case player of
+                                        A -> isDiagonalMove && (deltaX == -1 && abs deltaY == 1)
+                                        B -> isDiagonalMove && (deltaX == 1 && abs deltaY == 1)
+
+            return $ isKingMove && not adjustedDiagonalMove
+        
+        Nothing -> return False  -- Se não houver peça na posição de origem
+
+trySilverMove :: Position -> Position -> Bool -> ShogiGame Bool
+trySilverMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
+
+    case pieceAtDest of
+        Just (Piece _ player _) -> do
+            if isPromoted
+                then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+                else do
+                    let deltaX = desRow - srcRow
+                        deltaY = desCol - srcCol
+                        isDiagonalMove = (abs deltaX == 1 && abs deltaY == 1)
+                        isCapture = abs deltaY == 0
+                        isForwardMove = case player of
+                                          A -> deltaX == 1
+                                          B -> deltaX == -1
+                    return $ isDiagonalMove || (isForwardMove && isCapture)
+        Nothing -> return False
+
+dropPiece :: Piece -> Position -> ShogiGame ()
+dropPiece pieceToReplace toPos = placePiece toPos (Just pieceToReplace)
+
+isValidPosition :: Position -> ShogiGame Bool
+isValidPosition (row, col) = return $ row >= 0 && row < 9 && col >= 0 && col < 9

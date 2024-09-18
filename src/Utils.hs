@@ -1,8 +1,16 @@
-module Utils (Position, parsePosition, isValidPosition, allPositions) where
+module Utils (Position, parsePosition, allPositions) where
 
 import Data.Char (digitToInt, isDigit)
 
 type Position = (Int, Int)
+
+data Input = Sair | Repor | Mover deriving (Show)
+
+parseInput :: String -> Input
+parseInput input
+    | input == "sair"  = Sair
+    | input == "repor" = Repor
+    | otherwise        = Mover
 
 colToInt :: Char -> Int
 colToInt 'a' = 0
@@ -28,9 +36,6 @@ parsePosition strPos
         x = digitToInt xChar
         yChar = strPos !! 1
         y = colToInt yChar
-
-isValidPosition :: Position -> Bool
-isValidPosition (row, col) = row >= 0 && row < 9 && col >= 0 && col < 9
 
 -- gera todas as posições do tabuleiro
 allPositions :: [Position]

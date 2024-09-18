@@ -1,5 +1,6 @@
-module Board (createInitialBoard, isPromotionZone, printBoard, Cell, Board) where
+module Board (createInitialBoard, isPromotionZone, printBoard, Cell, Board, GameState(..), ShogiGame) where
 
+import Control.Monad.State
 import Data.List (intercalate)
 import Player
 import Piece hiding (isPromoted)
@@ -7,6 +8,14 @@ import Utils
 
 type Cell = Maybe Piece
 type Board = [[Cell]]
+
+data GameState = GameState {
+    board          :: Board,
+    capturedPieces :: ([Maybe Piece], [Maybe Piece]),
+    currentPlayer  :: Player
+}
+
+type ShogiGame a = StateT GameState IO a
 
 createCell :: Player -> PieceType -> Cell
 createCell player pieceType = Just (Piece pieceType player False)
@@ -70,38 +79,39 @@ resetColor  = "\x1b[0m"  -- Reseta para cor padrão
 printPiece :: Piece -> String
 printPiece (Piece pieceType player isPromoted) = case player of
     A -> case pieceType of
-        Peao          -> pieceColor ++ "P" ++ resetColor
-        Lanca         -> pieceColor ++ "L" ++ resetColor
-        Cavalo        -> pieceColor ++ "C" ++ resetColor
-        General_Prata -> pieceColor ++ "S" ++ resetColor
-        General_Ouro  -> pieceColor ++ "G" ++ resetColor
-        Bispo         -> pieceColor ++ "B" ++ resetColor
-        Torre         -> pieceColor ++ "T" ++ resetColor
-        Rei           -> pieceColor ++ "R" ++ resetColor
+        Peao          -> pieceColor ++ (if isPromoted then "と" else "歩") ++ resetColor
+        Lanca         -> pieceColor ++ (if isPromoted then "仝" else "香") ++ resetColor
+        Cavalo        -> pieceColor ++ (if isPromoted then "今" else "桂") ++ resetColor
+        General_Prata -> pieceColor ++ (if isPromoted then "全" else "銀") ++ resetColor
+        General_Ouro  -> pieceColor ++ "金" ++ resetColor
+        Bispo         -> pieceColor ++ (if isPromoted then "馬" else "角") ++ resetColor
+        Torre         -> pieceColor ++ (if isPromoted then "龍" else "飛") ++ resetColor
+        Rei           -> pieceColor ++ "王" ++ resetColor
     B -> case pieceType of
-        Peao          -> pieceColor ++ "P" ++ resetColor
-        Lanca         -> pieceColor ++ "L" ++ resetColor
-        Cavalo        -> pieceColor ++ "C" ++ resetColor
-        General_Prata -> pieceColor ++ "S" ++ resetColor
-        General_Ouro  -> pieceColor ++ "G" ++ resetColor
-        Bispo         -> pieceColor ++ "B" ++ resetColor
-        Torre         -> pieceColor ++ "T" ++ resetColor
-        Rei           -> pieceColor ++ "R" ++ resetColor
+        Peao          -> pieceColor ++ (if isPromoted then "と" else "歩") ++ resetColor
+        Lanca         -> pieceColor ++ (if isPromoted then "仝" else "香") ++ resetColor
+        Cavalo        -> pieceColor ++ (if isPromoted then "今" else "桂") ++ resetColor
+        General_Prata -> pieceColor ++ (if isPromoted then "全" else "銀") ++ resetColor
+        General_Ouro  -> pieceColor ++ "金" ++ resetColor
+        Bispo         -> pieceColor ++ (if isPromoted then "馬" else "角") ++ resetColor
+        Torre         -> pieceColor ++ (if isPromoted then "龍" else "飛") ++ resetColor
+        Rei           -> pieceColor ++ "玉" ++ resetColor
     where
         pieceColor = case player of
             A -> if isPromoted then greenColor else yellowColor
             B -> if isPromoted then whiteColor else blueColor
 
 printCell :: Cell -> String
-printCell Nothing      = "   "
+printCell Nothing      = "    "
 printCell (Just piece) = " " ++ printPiece piece ++ " "
 
 -- *código para printar as linhas numeradas retirado do chatgpt
-printBoard :: Board -> IO ()
-printBoard board = do
-    putStrLn " a | b | c | d | e | f | g | h | i " -- cabeçalho
-    putStrLn "-----------------------------------"
-    putStrLn (unlines (zipWith showRow board [1..9]))
+printBoard :: ShogiGame ()
+printBoard = do
+    b <- gets board
+    lift $ putStrLn " a  | b  | c  | d  | e  | f  | g  | h  |  i |" -- cabeçalho
+    lift $ putStrLn "---------------------------------------------"
+    lift $ putStrLn (unlines (zipWith showRow b [1..9]))
     where
         showRow :: [Cell] -> Int -> String
         showRow row n = intercalate "|" (map printCell row) ++ "| " ++ show n
