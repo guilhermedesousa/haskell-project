@@ -21,7 +21,7 @@ tryMovePiece2 tabuleiro fromPos toPos = do
                 _ ->
                     case pieceType of
                         Lanca -> do
-                            succLanceMove <- tryLanceMove fromPos toPos isPromoted
+                            succLanceMove <- tryLanceMoveC tabuleiro fromPos toPos isPromoted
                             if succLanceMove
                                 then return (returnBoard fromPos toPos b)
                                 else return Nothing
@@ -46,12 +46,12 @@ tryMovePiece2 tabuleiro fromPos toPos = do
                                 then return (returnBoard fromPos toPos b)
                                 else return Nothing
                         Bispo -> do
-                            succBishopMove <- tryBishopMove2 tabuleiro fromPos toPos isPromoted
+                            succBishopMove <- tryBishopMoveC tabuleiro fromPos toPos isPromoted
                             if succBishopMove
                                 then return (returnBoard fromPos toPos b)
                                 else return Nothing
                         Torre -> do
-                            succTowerMove <- tryTowerMove2 tabuleiro fromPos toPos isPromoted
+                            succTowerMove <- tryTowerMoveC tabuleiro fromPos toPos isPromoted
                             if succTowerMove
                                 then return (returnBoard fromPos toPos b)
                                 else return Nothing
@@ -203,6 +203,25 @@ tryPawnMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
                         B -> validMove (-1)
         Nothing -> return False  -- Se não houver peça na posição de origem
 
+tryLanceMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryLanceMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+    pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
+
+    if isPromoted
+        then tryGoldMove (srcRow, srcCol) (desRow, desCol)
+    else if srcCol /= desCol
+        then return False
+    else do
+        case pieceAtDest of
+            Just (Piece _ player _) -> do
+                let positions = [(row, srcCol) | row <- [min srcRow desRow + 1 .. max srcRow desRow - 1]]
+                pieces <- mapM (getPieceFromPosition2 board) positions
+                let pathClear = all (== Nothing) pieces
+                let validMove = if player == A then desRow > srcRow else desRow < srcRow
+
+                return $ validMove && pathClear
+            Nothing -> return False
+
 tryLanceMove :: Position -> Position -> Bool -> ShogiGame Bool
 tryLanceMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
     pieceAtDest <- getPieceFromPosition (srcRow, srcCol)
@@ -248,8 +267,8 @@ tryBishopMove (srcRow, srcCol) (desRow, desCol) isPromoted = do
 
     return $ validMove && noObstructions
 
-tryBishopMove2 :: Board -> Position -> Position -> Bool -> ShogiGame Bool
-tryBishopMove2 board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+tryBishopMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryBishopMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
     let deltaX = abs (desRow - srcRow)
         deltaY = abs (desCol - srcCol)
         -- Valida se pode ir pra frente ou para os lados caso seja promovida
@@ -269,8 +288,8 @@ tryBishopMove2 board (srcRow, srcCol) (desRow, desCol) isPromoted = do
 
     return $ validMove && noObstructions
 
-tryTowerMove2 :: Board -> Position -> Position -> Bool -> ShogiGame Bool
-tryTowerMove2 board (srcRow, srcCol) (desRow, desCol) isPromoted = do
+tryTowerMoveC :: Board -> Position -> Position -> Bool -> ShogiGame Bool
+tryTowerMoveC board (srcRow, srcCol) (desRow, desCol) isPromoted = do
     let deltaX = desRow - srcRow
         deltaY = desCol - srcCol
 
